@@ -183,6 +183,20 @@ body{position:fixed;inset:0}
   position:absolute;z-index:50;left:10px;top:10px;font-size:11px;background:rgba(0,0,0,.7);
   padding:5px 8px;border-radius:8px;display:none
 }
+
+#questionBox{z-index:100!important}
+#moveStartBtn{
+  position:relative!important;
+  z-index:999!important;
+  display:block;
+  margin:10px auto 0;
+  min-height:58px;
+  touch-action:manipulation!important;
+  pointer-events:auto!important;
+  cursor:pointer;
+}
+#moveStartBtn.hidden{display:none!important}
+
 </style>
 </head>
 <body>
@@ -201,7 +215,7 @@ body{position:fixed;inset:0}
   <div id="question">Tekan MULA untuk menggunakan kamera.</div>
   <div id="instruction">Selepas soalan muncul, tekan butang <b>▶️ MULA — 10 SAAT</b>.</div>
   <div id="countdown"></div>
-  <button id="moveStartBtn" class="bigBtn hidden">▶️ MULA — 10 SAAT</button>
+  <button id="moveStartBtn" type="button" class="bigBtn hidden" onclick="startMove()" ontouchend="event.preventDefault(); startMove();">▶️ MULA — 10 SAAT</button>
 </div>
 
 <div id="zones">
@@ -416,11 +430,14 @@ function loadQuestion(){
   moveStartBtn.textContent="▶️ MULA — 10 SAAT";
 }
 
-function startMove(){
+window.startMove = function startMove(){
   if(!running || analysing) return;
   moveStartBtn.classList.add("hidden");
   moveStartBtn.disabled=true;
-  beginAnalysis();
+  countdownEl.textContent="3";
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="2"; },700);
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="1"; },1400);
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="GERAK!"; beginAnalysis(); },2100);
 }
 
 function beginAnalysis(){
@@ -593,7 +610,6 @@ function finishGame(){
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.getElementById("startBtn").onclick=startCamera;
-moveStartBtn.onclick=startMove;
 document.getElementById("againBtn").onclick=()=>{
   document.getElementById("resultOverlay").classList.add("hidden");
   startGame();
