@@ -91,7 +91,7 @@ video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(1)}
   <div class="top">
     <span class="pill">📽️ SKRIN GURU</span>
     <span id="roomCode" class="pill">KOD BILIK: ...</span>
-    <span id="teacherConn" class="pill">⏳ Menunggu iPad...</span>
+    <span id="teacherConn" class="pill">🟡 Menunggu iPad...</span>
   </div>
   <div class="question">
     <div class="hint">Baca ciri bentuk di bawah. Apabila guru tekan MULA, murid bergerak!</div>
@@ -140,8 +140,20 @@ video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(1)}
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script type="module">
-import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm";
+<script>
+let FilesetResolver=null, PoseLandmarker=null;
+async function loadMediaPipe(){
+  if(FilesetResolver && PoseLandmarker) return true;
+  try{
+    const mod = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm");
+    FilesetResolver = mod.FilesetResolver;
+    PoseLandmarker = mod.PoseLandmarker;
+    return true;
+  }catch(e){
+    console.error("MediaPipe gagal dimuat:",e);
+    return false;
+  }
+}
 
 const QUESTIONS=[
  {q:"Saya mempunyai 3 sisi dan 3 bucu. Apakah bentuk saya?",a:"SEGI TIGA"},
@@ -205,9 +217,24 @@ function showResult(data){
  $("nextQuestion").classList.remove("hidden");
 }
 function initTeacher(){
- show("teacher");roomCode=code();$("roomCode").textContent="KOD BILIK: "+roomCode;
- peer=new Peer(roomCode);
- peer.on("open",()=>{});
+ show("teacher");
+ roomCode=code();
+ $("roomCode").textContent="KOD BILIK: "+roomCode;
+ $("teacherConn").textContent="🟡 Menghubungkan...";
+ setTeacherQuestion();
+
+ try{
+   peer=new Peer(roomCode,{secure:true});
+ }catch(e){
+   $("teacherConn").textContent="🔴 PeerJS gagal dimulakan";
+   $("result").textContent="⚠️ Gagal memulakan sambungan. Sila refresh halaman.";
+   return;
+ }
+
+ peer.on("open",()=>{
+   $("teacherConn").textContent="🟡 Menunggu iPad...";
+   $("result").innerHTML="📱 <b>Buka laman ini pada iPad</b> dan masukkan kod <b>"+roomCode+"</b>.";
+ });
  peer.on("connection",c=>{
   conn=c;$("teacherConn").textContent="🟢 iPad Bersambung";
   conn.on("data",d=>{if(d.type==="counts")showResult(d);});
@@ -220,7 +247,7 @@ async function initCamera(){
  show("camera");
  const room=$("roomInput").value.trim().toUpperCase();
  if(!room){$("camStatus").textContent="⚠️ Masukkan kod bilik dahulu.";return}
- peer=new Peer();
+ peer=new Peer({secure:true});
  peer.on("open",()=>{
    conn=peer.connect(room,{reliable:true});
    conn.on("open",()=>{$("cameraConn").textContent="🟢 Bersambung ke guru";$("camStatus").textContent="📷 Kamera aktif. Tunggu arahan MULA.";});
@@ -231,12 +258,22 @@ async function initCamera(){
  try{
    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
    $("video").srcObject=stream;
+   $("camStatus").textContent="📷 Kamera dibuka. Memuatkan AI...";
+   const ok=await loadMediaPipe();
+   if(!ok){
+     $("camStatus").textContent="⚠️ AI kamera gagal dimuat. Semak internet iPad dan cuba lagi.";
+     return;
+   }
    await setupPose();
  }catch(e){
    $("camStatus").textContent="⚠️ Kamera tidak dapat dibuka. Benarkan akses kamera pada Safari/Chrome.";
  }
 }
 async function setupPose(){
+ if(!FilesetResolver || !PoseLandmarker){
+   $("camStatus").textContent="⚠️ Modul AI belum tersedia.";
+   return;
+ }
  const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm");
  poseLandmarker=await PoseLandmarker.createFromOptions(vision,{
   baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"},
