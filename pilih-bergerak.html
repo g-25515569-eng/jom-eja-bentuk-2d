@@ -77,6 +77,26 @@ body{position:fixed;inset:0}
   position:absolute;z-index:12;left:3%;right:3%;bottom:max(18px,env(safe-area-inset-bottom));
   display:grid;grid-template-columns:1fr 1fr;gap:12px;
 }
+
+/* Paparan keputusan selepas masa tamat */
+.answer.correct-side{
+  background:rgba(36, 205, 108, .96)!important;
+  border-color:#8dffba!important;
+  box-shadow:0 0 0 4px rgba(49,209,124,.25),0 0 35px rgba(49,209,124,.65);
+}
+.answer.wrong-side{
+  background:rgba(235, 55, 72, .96)!important;
+  border-color:#ff9da6!important;
+  box-shadow:0 0 0 4px rgba(255,93,108,.22),0 0 35px rgba(255,93,108,.55);
+}
+.answer.neutral-side{
+  background:rgba(70,76,88,.9)!important;
+  border-color:rgba(255,255,255,.35)!important;
+}
+.answer .resultMark{
+  display:block;font-size:.8em;margin-top:5px;
+}
+
 .answer{
   min-height:82px;border-radius:22px;padding:12px 16px;text-align:center;
   display:flex;align-items:center;justify-content:center;
@@ -141,8 +161,9 @@ body{position:fixed;inset:0}
 
 <div id="questionBox">
   <div id="question">Tekan MULA untuk menggunakan kamera.</div>
-  <div id="instruction">Murid bergerak ke kawasan jawapan KIRI atau KANAN.</div>
+  <div id="instruction">Selepas soalan muncul, tekan butang <b>▶️ MULA — 10 SAAT</b>.</div>
   <div id="countdown"></div>
+  <button id="moveStartBtn" class="bigBtn hidden">▶️ MULA — 10 SAAT</button>
 </div>
 
 <div id="zones">
@@ -204,9 +225,10 @@ body{position:fixed;inset:0}
       1. Letakkan iPad menghadap murid.<br>
       2. Pastikan kawasan <b>KIRI</b> dan <b>KANAN</b> boleh dilihat kamera.<br>
       3. Soalan dan dua jawapan dipaparkan pada skrin.<br>
-      4. Murid bergerak ke kawasan jawapan masing-masing.<br>
-      5. Sistem mengukur gerakan yang lebih kuat di kiri/kanan.<br>
-      6. Selepas keputusan dipaparkan, soalan seterusnya bermula.
+      4. Tekan <b>▶️ MULA — 10 SAAT</b>.<br>
+      5. Murid bergerak ke kawasan jawapan masing-masing dalam masa 10 saat.<br>
+      6. Sistem mengukur gerakan yang lebih kuat di kiri/kanan.<br>
+      7. Selepas keputusan dipaparkan, soalan seterusnya bermula.
     </p>
     <p><b>Nota:</b> Ini ialah versi ringan tanpa MediaPipe, jadi ia lebih sesuai untuk iPad Safari tetapi fokus kepada keputusan kumpulan.</p>
     <button class="bigBtn secondary" id="closeHelp">TUTUP</button>
@@ -273,6 +295,7 @@ const rightAnswerEl = document.getElementById("rightAnswer");
 const leftFill = document.getElementById("leftFill");
 const rightFill = document.getElementById("rightFill");
 const meters = document.getElementById("meters");
+const moveStartBtn = document.getElementById("moveStartBtn");
 
 let stream = null;
 let index = 0;
@@ -284,7 +307,7 @@ let prev = null;
 let leftEnergy = 0;
 let rightEnergy = 0;
 let analysisStart = 0;
-let analysisDuration = 5000;
+let analysisDuration = 10000;
 let lastSample = 0;
 let raf = 0;
 
@@ -335,13 +358,14 @@ function startGame(){
 }
 
 function loadQuestion(){
+  resetAnswerColors();
   if(index >= QUESTIONS.length){
     finishGame();
     return;
   }
   const item=QUESTIONS[index];
   missionEl.textContent=`MISI ${index+1} / ${QUESTIONS.length}`;
-  timerEl.textContent="BERSIAP";
+  timerEl.textContent="10s";
   questionEl.textContent=item.q;
   currentAnswers=shuffleAnswers(item);
   instructionEl.textContent="Pilih jawapan dengan bergerak ke kawasan KIRI atau KANAN.";
@@ -349,17 +373,14 @@ function loadQuestion(){
   leftFill.style.width="0%";
   rightFill.style.width="0%";
   meters.classList.add("hidden");
-  setTimeout(()=>startCountdown(),700);
+  moveStartBtn.classList.remove("hidden");
+  moveStartBtn.disabled=false;
+  moveStartBtn.textContent="▶️ MULA — 10 SAAT";
 }
 
-async function startCountdown(){
-  if(!running) return;
-  const words=["3","2","1","GERAK!"];
-  for(const w of words){
-    countdownEl.textContent=w;
-    if(w==="GERAK!") break;
-    await sleep(700);
-  }
+function startMove(){
+  if(!running || analysing) return;
+  moveStartBtn.classList.add("hidden");
   beginAnalysis();
 }
 
@@ -451,7 +472,9 @@ function endAnalysis(){
     return;
   }
 
-  const chosen = leftEnergy > rightEnergy ? currentAnswers.left : currentAnswers.right;
+  let choseLeft = leftEnergy > rightEnergy;
+  if(flipped) choseLeft = !choseLeft;
+  const chosen = choseLeft ? currentAnswers.left : currentAnswers.right;
   const correct = chosen === QUESTIONS[index].correct;
 
   if(correct) score++;
@@ -460,37 +483,67 @@ function endAnalysis(){
   showFeedback(chosen, correct);
 }
 
-function showFeedback(chosen, correct){
-  questionEl.textContent = correct ? "✅ BETUL!" : "❌ CUBA LAGI!";
-  instructionEl.textContent = `Pilihan: ${chosen}`;
-  countdownEl.textContent = correct ? "⭐" : "💡";
-  timerEl.textContent = correct ? "+1" : "0";
 
-  if(correct){
-    document.getElementById("rightAnswer").style.transform="scale(1.03)";
-    document.getElementById("leftAnswer").style.transform="scale(1.03)";
-  }
-
-  setTimeout(()=>{
-    document.getElementById("rightAnswer").style.transform="";
-    document.getElementById("leftAnswer").style.transform="";
-    index++;
-    loadQuestion();
-  },1600);
+function resetAnswerColors(){
+  [leftAnswerEl,rightAnswerEl].forEach(el=>{
+    el.classList.remove("correct-side","wrong-side","neutral-side");
+    const mark=el.querySelector(".resultMark");
+    if(mark) mark.remove();
+  });
 }
 
+function showSideResult(chosen){
+  const correctAnswer=QUESTIONS[index].correct;
+  [leftAnswerEl,rightAnswerEl].forEach(el=>{
+    const answer=el.textContent.trim();
+    el.classList.remove("correct-side","wrong-side","neutral-side");
+    const mark=document.createElement("span");
+    mark.className="resultMark";
+    if(answer===correctAnswer){
+      el.classList.add("correct-side");
+      mark.textContent="✓ BETUL";
+    }else{
+      el.classList.add("wrong-side");
+      mark.textContent="✗ SALAH";
+    }
+    el.appendChild(mark);
+  });
+
+  // Beri sedikit masa supaya murid nampak warna keputusan.
+  setTimeout(()=>{
+    [leftAnswerEl,rightAnswerEl].forEach(el=>{
+      const mark=el.querySelector(".resultMark");
+      if(mark) mark.remove();
+      el.classList.remove("correct-side","wrong-side","neutral-side");
+    });
+    index++;
+    loadQuestion();
+  },2600);
+}
+
+function showFeedback(chosen, correct){
+  // Selepas masa tamat, kedua-dua kawasan jawapan akan bertukar warna:
+  // hijau = jawapan betul, merah = jawapan salah.
+  showSideResult(chosen);
+
+  questionEl.textContent = correct ? "🎉 BETUL!" : "💡 JAWAPAN DITUNJUKKAN";
+  instructionEl.textContent = `Murid memilih: ${chosen}`;
+  countdownEl.textContent = correct ? "⭐ +1" : "❌";
+  timerEl.textContent = "SEMAK";
+}
 function showRetry(){
   questionEl.textContent="🤔 Gerakan belum jelas";
-  instructionEl.textContent="Pastikan murid bergerak jelas ke KIRI atau KANAN.";
-  countdownEl.textContent="ULANG";
+  instructionEl.textContent="Pastikan murid bergerak jelas ke KIRI atau KANAN, kemudian tekan MULA semula.";
+  countdownEl.textContent="CUBA LAGI";
   timerEl.textContent="—";
-  setTimeout(()=>{
-    if(running) loadQuestion();
-  },1500);
+  moveStartBtn.classList.remove("hidden");
+  moveStartBtn.disabled=false;
+  moveStartBtn.textContent="🔄 CUBA LAGI — 10 SAAT";
 }
 
 function finishGame(){
   running=false;
+  moveStartBtn.classList.add("hidden");
   document.getElementById("resultOverlay").classList.remove("hidden");
   document.getElementById("resultText").textContent=`⭐ ${score} / ${QUESTIONS.length}`;
   const pct=Math.round(score/QUESTIONS.length*100);
@@ -501,6 +554,7 @@ function finishGame(){
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.getElementById("startBtn").onclick=startCamera;
+moveStartBtn.onclick=startMove;
 document.getElementById("againBtn").onclick=()=>{
   document.getElementById("resultOverlay").classList.add("hidden");
   startGame();
