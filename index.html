@@ -3,94 +3,307 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jom Eja Bentuk 2D</title>
+<title>🌈 Misi Bentuk 2D</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;background:linear-gradient(135deg,#dff6ff,#f5e8ff);color:#222}
-.game{width:95%;max-width:1000px;background:#fff;border-radius:30px;padding:30px;text-align:center;box-shadow:0 15px 40px rgba(0,0,0,.15)}
-h1{margin:0 0 8px;font-size:40px;color:#4b3fbf}
-.instruction{font-size:23px;font-weight:bold;margin-bottom:10px}
-.round{font-size:17px;color:#777;margin-bottom:5px}
-.shape-area{height:230px;display:flex;justify-content:center;align-items:center}
-.shape{filter:drop-shadow(0 8px 5px rgba(0,0,0,.18))}
-.triangle{width:0;height:0;border-left:100px solid transparent;border-right:100px solid transparent;border-bottom:170px solid #ffca3a}
-.circle{width:170px;height:170px;border-radius:50%;background:#5bc0eb}
-.square{width:170px;height:170px;background:#7bd389}
-.rectangle{width:240px;height:150px;background:#ff8fab;border-radius:8px}
-.word-title{font-size:19px;color:#666}
-.letters{min-height:68px;margin:12px auto;display:flex;justify-content:center;align-items:center;gap:7px;flex-wrap:wrap}
-.letter{
-  width:45px;height:55px;border:3px solid #4b3fbf;border-radius:11px;
-  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;
-  background:#f4f1ff
+:root{
+  --purple:#6c4ff6;
+  --purple2:#8d6cff;
+  --pink:#ff6fae;
+  --yellow:#ffd84d;
+  --green:#50d890;
+  --blue:#45b7ff;
+  --ink:#293052;
 }
-.letter.empty{color:#bbb;background:#fafafa}
-.word-gap{width:22px;height:55px;flex:0 0 22px}
-.mic-button{margin-top:10px;width:88px;height:88px;border-radius:50%;border:none;background:#4b3fbf;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 8px 18px rgba(75,63,191,.35)}
-.mic-button:disabled{opacity:.5;cursor:not-allowed}
-.mic-button.listening{background:#e63946;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-.status{min-height:34px;margin-top:16px;font-size:21px;font-weight:bold}
-.success{color:#159447}.error{color:#e63946}
-.hint{margin-top:10px;color:#777;font-size:15px}
-.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
-.control{padding:11px 20px;border:none;border-radius:12px;background:#eee;font-size:16px;cursor:pointer}
-.next{background:#4b3fbf;color:#fff;display:none}
-.stars{font-size:25px;min-height:34px;margin-top:5px}
-.debug{margin-top:8px;font-size:13px;color:#aaa;min-height:18px}
-@media(max-width:600px){
-  h1{font-size:30px}
-  .instruction{font-size:19px}
-  .letter{width:40px;height:50px;font-size:25px}
-  .word-gap{width:16px;flex-basis:16px}
+body{
+  margin:0;min-height:100vh;overflow-x:hidden;
+  font-family:"Trebuchet MS",Arial,sans-serif;color:var(--ink);
+  background:linear-gradient(180deg,#7edcff 0%,#b9f1ff 45%,#f9e9ff 100%);
+}
+body:before,body:after{
+  content:"";position:fixed;border-radius:50%;filter:blur(1px);opacity:.5;z-index:-1;
+}
+body:before{width:260px;height:260px;background:#fff;top:-100px;left:-70px}
+body:after{width:330px;height:330px;background:#ffd7ef;right:-130px;bottom:-120px}
+
+.bg-star{
+  position:fixed;font-size:24px;opacity:.7;animation:floatStar 5s ease-in-out infinite;z-index:-1
+}
+.s1{top:8%;left:8%}.s2{top:18%;right:12%;animation-delay:1s}.s3{bottom:15%;left:12%;animation-delay:2s}.s4{bottom:8%;right:8%;animation-delay:3s}
+@keyframes floatStar{50%{transform:translateY(-12px) rotate(12deg);opacity:1}}
+
+.app{
+  width:min(1100px,94vw);margin:24px auto;
+  background:rgba(255,255,255,.93);
+  border:5px solid rgba(255,255,255,.8);
+  border-radius:34px;
+  box-shadow:0 20px 55px rgba(70,58,150,.22);
+  overflow:hidden;
+}
+.header{
+  padding:22px 28px 18px;
+  background:linear-gradient(135deg,#7657ff,#9b70ff);
+  color:#fff;position:relative;
+}
+.header h1{margin:0;font-size:clamp(30px,5vw,50px);letter-spacing:.5px;text-shadow:0 4px 0 rgba(54,37,150,.2)}
+.header p{margin:5px 0 0;font-size:19px;font-weight:bold}
+.mascot{
+  position:absolute;right:26px;top:14px;font-size:68px;
+  animation:bob 2.5s ease-in-out infinite;
+}
+@keyframes bob{50%{transform:translateY(-8px) rotate(3deg)}}
+
+.topbar{
+  display:flex;gap:12px;align-items:center;justify-content:space-between;
+  padding:14px 22px;background:#fff9cf;border-bottom:3px dashed #eadb70;
+  flex-wrap:wrap
+}
+.round{font-size:18px;font-weight:900}
+.progress-wrap{flex:1;min-width:180px;max-width:480px}
+.progress{height:18px;background:#ecebfa;border-radius:99px;overflow:hidden;border:2px solid #ddd8f5}
+.progress-fill{height:100%;width:25%;background:linear-gradient(90deg,#ffcf33,#ff79ad,#8b67ff);border-radius:99px;transition:width .4s}
+.score{font-size:19px;font-weight:900;white-space:nowrap}
+
+.content{padding:24px 28px 30px;text-align:center}
+.instruction{
+  display:inline-block;background:#f0edff;color:#5840c8;border-radius:999px;
+  padding:10px 18px;font-weight:900;font-size:20px;
+  box-shadow:0 4px 0 #ddd6ff;
+}
+.shape-card{
+  margin:20px auto 18px;max-width:720px;min-height:265px;
+  border-radius:28px;padding:18px;
+  background:linear-gradient(145deg,#ffffff,#f6fbff);
+  border:4px solid #e8e5ff;
+  box-shadow:inset 0 -8px 0 rgba(90,75,190,.05),0 10px 25px rgba(60,80,150,.10);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.shape-card:before,.shape-card:after{
+  content:"";position:absolute;border-radius:50%;background:#eaf8ff
+}
+.shape-card:before{width:130px;height:130px;left:-45px;bottom:-45px}
+.shape-card:after{width:90px;height:90px;right:-25px;top:-25px}
+.shape{
+  position:relative;z-index:2;filter:drop-shadow(0 13px 7px rgba(40,50,90,.2));
+  animation:shapeIn .55s cubic-bezier(.2,1.5,.5,1);
+}
+@keyframes shapeIn{
+  from{transform:scale(.4) rotate(-15deg);opacity:0}
+  to{transform:scale(1) rotate(0);opacity:1}
+}
+.triangle{
+  width:0;height:0;border-left:105px solid transparent;border-right:105px solid transparent;
+  border-bottom:180px solid #ffcb3d;
+}
+.circle{width:185px;height:185px;border-radius:50%;background:#50bfff}
+.square{width:185px;height:185px;background:#55d88a;border-radius:12px}
+.rectangle{width:270px;height:165px;background:#ff79ad;border-radius:14px}
+
+.mission{
+  font-size:18px;font-weight:bold;color:#656987;margin:4px 0 12px
+}
+.letters{
+  min-height:76px;display:flex;justify-content:center;align-items:center;
+  gap:7px;flex-wrap:wrap;margin:0 auto 12px;max-width:900px
+}
+.letter{
+  width:48px;height:58px;border-radius:14px;
+  border:3px solid #7c68e8;background:#f5f2ff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:900;color:#5946c8;
+  box-shadow:0 5px 0 #ddd7fa;transition:.18s
+}
+.letter.empty{color:#c8c6d6;background:#fafaff}
+.letter.filled{background:#e4ffef;border-color:#43cb82;color:#159457;box-shadow:0 5px 0 #bdebd1;animation:pop .25s}
+@keyframes pop{50%{transform:scale(1.18)}}
+.word-gap{width:26px;height:58px;flex:0 0 26px}
+
+.help{
+  display:flex;justify-content:center;gap:9px;flex-wrap:wrap;
+  margin:14px auto 16px
+}
+.help span{
+  background:#fff;border:2px solid #eceaf7;border-radius:999px;
+  padding:8px 13px;font-weight:bold;color:#62657b
+}
+
+.mic-button{
+  width:105px;height:105px;border:7px solid #fff;border-radius:50%;
+  background:linear-gradient(145deg,#ff709f,#ff4f83);color:#fff;
+  font-size:44px;cursor:pointer;
+  box-shadow:0 10px 0 #d83f70,0 17px 25px rgba(216,63,112,.25);
+  transition:.15s;position:relative
+}
+.mic-button:hover{transform:translateY(-3px)}
+.mic-button:active{transform:translateY(5px);box-shadow:0 5px 0 #d83f70}
+.mic-button.listening{
+  animation:micPulse .85s infinite;
+  background:linear-gradient(145deg,#ff4f6f,#f22954)
+}
+@keyframes micPulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.12);box-shadow:0 10px 0 #c91f45,0 0 0 18px rgba(255,79,111,.14),0 0 0 35px rgba(255,79,111,.07)}
+}
+.mic-label{font-weight:900;color:#e84678;margin-top:12px;font-size:18px}
+
+.status{
+  min-height:42px;margin:16px auto 6px;padding:10px 18px;
+  border-radius:18px;font-size:21px;font-weight:900;max-width:760px
+}
+.status.success{background:#e5fff0;color:#118653;border:2px solid #b9efcf}
+.status.error{background:#fff0f2;color:#d73555;border:2px solid #ffd0d8}
+.status.info{background:#f4f2ff;color:#604dc6;border:2px solid #ddd7ff}
+
+.controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:18px}
+.control{
+  border:0;border-radius:15px;padding:13px 21px;font-size:17px;font-weight:900;
+  cursor:pointer;background:#eeeef7;color:#50536a;box-shadow:0 5px 0 #d7d7e5
+}
+.control:active{transform:translateY(3px);box-shadow:0 2px 0 #d7d7e5}
+.next{background:linear-gradient(135deg,#6d52f4,#8d6cff);color:#fff;box-shadow:0 5px 0 #5138c6}
+.reset{background:#fff0c8;color:#8a6412;box-shadow:0 5px 0 #e6c86e}
+
+.finish{
+  position:fixed;inset:0;background:rgba(49,42,96,.62);
+  display:none;align-items:center;justify-content:center;padding:20px;z-index:20
+}
+.finish.show{display:flex}
+.finish-card{
+  background:#fff;border-radius:34px;padding:34px 26px;text-align:center;
+  max-width:600px;width:100%;box-shadow:0 25px 70px rgba(0,0,0,.25);
+  animation:cardIn .45s cubic-bezier(.2,1.5,.5,1)
+}
+@keyframes cardIn{from{transform:scale(.65) translateY(30px);opacity:0}to{transform:scale(1);opacity:1}}
+.trophy{font-size:90px;animation:trophy .9s infinite alternate}
+@keyframes trophy{to{transform:rotate(8deg) scale(1.06)}}
+.finish h2{font-size:38px;color:#6348dc;margin:5px 0}
+.finish p{font-size:21px;font-weight:bold;color:#65677a}
+.big-stars{font-size:40px;letter-spacing:4px;margin:12px}
+
+.confetti{
+  position:fixed;top:-30px;font-size:24px;z-index:30;pointer-events:none;
+  animation:fall 1.8s linear forwards
+}
+@keyframes fall{
+  to{transform:translateY(110vh) rotate(720deg);opacity:0}
+}
+
+@media(max-width:650px){
+  .app{width:97vw;margin:8px auto;border-radius:24px}
+  .header{padding:18px 20px}.mascot{font-size:48px;right:15px}
+  .header p{max-width:70%;font-size:16px}
+  .content{padding:18px 12px 24px}
+  .shape-card{min-height:230px}
+  .triangle{border-left-width:82px;border-right-width:82px;border-bottom-width:140px}
+  .circle,.square{width:150px;height:150px}.rectangle{width:220px;height:135px}
+  .letter{width:40px;height:50px;font-size:25px}.word-gap{width:16px;flex-basis:16px}
+  .instruction{font-size:17px}
 }
 </style>
 </head>
 <body>
-<div class="game">
-<h1>🔎 JOM EJA BENTUK 2D</h1>
-<div class="instruction">🎯 Eja nama bentuk ini dengan suara</div>
-<div class="round" id="round"></div>
-<div class="stars" id="stars">⭐ 0</div>
+<div class="bg-star s1">⭐</div><div class="bg-star s2">✨</div>
+<div class="bg-star s3">🌟</div><div class="bg-star s4">💫</div>
 
-<div class="shape-area" id="shapeArea"></div>
+<div class="app">
+  <header class="header">
+    <h1>🌈 MISI BENTUK 2D</h1>
+    <p>Jom jadi JUARA ejaan! 🎤 Sebut satu huruf pada satu masa.</p>
+    <div class="mascot">🧑‍🚀</div>
+  </header>
 
-<div class="word-title">Nama bentuk:</div>
-<div class="letters" id="letters"></div>
+  <div class="topbar">
+    <div class="round" id="round">Bentuk 1 daripada 4</div>
+    <div class="progress-wrap"><div class="progress"><div class="progress-fill" id="progressFill"></div></div></div>
+    <div class="score" id="score">⭐ 0</div>
+  </div>
 
-<button class="mic-button" id="micButton" type="button">🎤</button>
+  <main class="content">
+    <div class="instruction">🎯 EJA NAMA BENTUK INI DENGAN SUARA</div>
 
-<div class="status" id="status">Tekan mikrofon dan sebut satu huruf.</div>
-<div class="hint">Sebut <b>satu huruf pada satu masa</b>, contohnya “S”, kemudian “E”, kemudian “G”.</div>
-<div class="debug" id="debug"></div>
+    <div class="shape-card" id="shapeArea"></div>
 
-<div class="controls">
-<button class="control" id="resetButton" type="button">🔄 Mula Semula</button>
-<button class="control next" id="nextButton" type="button">➡️ Bentuk Seterusnya</button>
+    <div class="mission">🧩 Lengkapkan semua kotak huruf untuk membuka bintang!</div>
+    <div class="letters" id="letters"></div>
+
+    <div class="help">
+      <span>1️⃣ Tekan 🎤</span>
+      <span>2️⃣ Sebut huruf</span>
+      <span>3️⃣ Tunggu kotak terisi</span>
+    </div>
+
+    <button class="mic-button" id="micButton" type="button" aria-label="Tekan untuk bercakap">🎤</button>
+    <div class="mic-label" id="micLabel">TEKAN UNTUK MULA</div>
+
+    <div class="status info" id="status">Sedia? Tekan mikrofon dan sebut huruf pertama.</div>
+
+    <div class="controls">
+      <button class="control reset" id="resetButton" type="button">🔄 Mula Semula</button>
+      <button class="control next" id="nextButton" type="button">🚀 Bentuk Seterusnya</button>
+    </div>
+  </main>
 </div>
+
+<div class="finish" id="finish">
+  <div class="finish-card">
+    <div class="trophy">🏆</div>
+    <h2>TAHNIAH, JUARA! 🎉</h2>
+    <p>Awak berjaya mengeja semua 4 bentuk 2D!</p>
+    <div class="big-stars">⭐⭐⭐⭐</div>
+    <button class="control next" id="playAgain" type="button">🔁 Main Lagi</button>
+  </div>
 </div>
 
 <script>
 const SHAPES=[
-{name:"SEGI TIGA",answer:"SEGITIGA",css:"triangle",words:["SEGI","TIGA"]},
-{name:"BULATAN",answer:"BULATAN",css:"circle",words:["BULATAN"]},
-{name:"SEGI EMPAT SAMA",answer:"SEGIEMPATSAMA",css:"square",words:["SEGI","EMPAT","SAMA"]},
-{name:"SEGI EMPAT TEPAT",answer:"SEGIEMPATTEPAT",css:"rectangle",words:["SEGI","EMPAT","TEPAT"]}
+  {answer:"SEGITIGA",css:"triangle",words:["SEGI","TIGA"]},
+  {answer:"BULATAN",css:"circle",words:["BULATAN"]},
+  {answer:"SEGIEMPATSAMA",css:"square",words:["SEGI","EMPAT","SAMA"]},
+  {answer:"SEGIEMPATTEPAT",css:"rectangle",words:["SEGI","EMPAT","TEPAT"]}
 ];
 
-let currentShape=0,currentIndex=0,stars=0,recognition=null;
+let currentShape=0,currentIndex=0,stars=0,recognition=null,audioCtx=null;
 
 const shapeArea=document.getElementById("shapeArea");
 const lettersContainer=document.getElementById("letters");
 const statusEl=document.getElementById("status");
-const debugEl=document.getElementById("debug");
 const micButton=document.getElementById("micButton");
+const micLabel=document.getElementById("micLabel");
 const resetButton=document.getElementById("resetButton");
 const nextButton=document.getElementById("nextButton");
 const roundEl=document.getElementById("round");
-const starsEl=document.getElementById("stars");
+const scoreEl=document.getElementById("score");
+const progressFill=document.getElementById("progressFill");
+const finish=document.getElementById("finish");
+const playAgain=document.getElementById("playAgain");
 
 function current(){return SHAPES[currentShape]}
+
+function beep(freq=700,duration=.12){
+  try{
+    audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.frequency.value=freq;o.type="sine";
+    g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.08,audioCtx.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+duration);
+    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration);
+  }catch(e){}
+}
+
+function celebrate(){
+  beep(900,.12);setTimeout(()=>beep(1200,.18),100);
+  const icons=["⭐","✨","🎉","🌟","💛","🎈"];
+  for(let i=0;i<28;i++){
+    const c=document.createElement("div");c.className="confetti";
+    c.textContent=icons[Math.floor(Math.random()*icons.length)];
+    c.style.left=(Math.random()*100)+"vw";
+    c.style.animationDelay=(Math.random()*.45)+"s";
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2400);
+  }
+}
 
 function createShape(){
   shapeArea.innerHTML="";
@@ -99,52 +312,41 @@ function createShape(){
   shapeArea.appendChild(d);
 }
 
-/* Paparkan kotak huruf dengan ruang yang jelas antara perkataan.
-   Contoh: SEGI   TIGA
-   Tetapi sistem tetap menyimpan jawapan sebagai SEGITIGA. */
 function createLetters(){
   lettersContainer.innerHTML="";
-  let position=0;
-
-  current().words.forEach((word,wordIndex)=>{
+  let pos=0;
+  current().words.forEach((word,wi)=>{
     for(let i=0;i<word.length;i++){
       const b=document.createElement("div");
-      b.className="letter empty";
-      b.id="letter-"+position;
-      b.textContent="_";
-      lettersContainer.appendChild(b);
-      position++;
+      b.className="letter empty";b.id="letter-"+pos;b.textContent="•";
+      lettersContainer.appendChild(b);pos++;
     }
-
-    if(wordIndex<current().words.length-1){
-      const gap=document.createElement("div");
-      gap.className="word-gap";
+    if(wi<current().words.length-1){
+      const gap=document.createElement("div");gap.className="word-gap";
       lettersContainer.appendChild(gap);
     }
   });
 }
 
-function updateRound(){
-  /* Nama bentuk tidak lagi dipaparkan di bahagian atas.
-     Murid hanya nampak nombor bentuk. */
-  roundEl.textContent="Bentuk "+(currentShape+1)+" daripada "+SHAPES.length;
-  starsEl.textContent="⭐ "+stars;
+function updateTop(){
+  roundEl.textContent=`Bentuk ${currentShape+1} daripada ${SHAPES.length}`;
+  scoreEl.textContent=`⭐ ${stars}`;
+  const done=currentShape;
+  progressFill.style.width=((done/SHAPES.length)*100+25)+"%";
 }
 
-function setStatus(msg,cls=""){
-  statusEl.className="status "+cls;
+function setStatus(msg,type="info"){
+  statusEl.className="status "+type;
   statusEl.textContent=msg;
 }
 
 function loadShape(){
   currentIndex=0;
-  createShape();
-  createLetters();
-  updateRound();
-  debugEl.textContent="";
+  createShape();createLetters();updateTop();
   nextButton.style.display="none";
   micButton.style.display="inline-block";
-  setStatus("Tekan mikrofon dan sebut satu huruf.");
+  micLabel.textContent="TEKAN UNTUK MULA";
+  setStatus("Sedia? Tekan mikrofon dan sebut huruf pertama.","info");
 }
 
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -154,80 +356,30 @@ function normalize(t){
 }
 
 function letterFromTranscript(text,expected){
-  const t=normalize(text);
-
-  const contextAliases={
-    "A":["A","EI","AY","E"],
-    "B":["B","BI","BEE"],
-    "C":["C","SI","SEE"],
-    "D":["D","DI","DEE"],
-    "E":["E","I","AI"],
-    "F":["F","EF"],
-    "G":["G","JI","JEE"],
-    "H":["H","EICH"],
-    "I":["I","AI","E"],
-    "J":["J","JE"],
-    "K":["K","KE"],
-    "L":["L","EL"],
-    "M":["M","EM"],
-    "N":["N","EN"],
-    "O":["O"],
-    "P":["P","PI"],
-    "Q":["Q","KYU"],
-    "R":["R","AR"],
-    "S":["S","ES"],
-    "T":["T","TI","TE","I","AIR","AIRE","AYR","ER"],
-    "U":["U","YU"],
-    "V":["V","VI"],
-    "W":["W","DOUBLE U"],
-    "X":["X","EKS"],
-    "Y":["Y","WAI"],
-    "Z":["Z","ZED"]
+  const t=normalize(text).replace(/\s+/g," ");
+  const aliases={
+    A:["A","EI","AY","E"],B:["B","BI","BEE"],C:["C","SI","SEE"],
+    D:["D","DI","DEE"],E:["E","I","AI"],F:["F","EF"],
+    G:["G","JI","JEE"],H:["H","EICH"],I:["I","AI","E"],
+    J:["J","JE"],K:["K","KE"],L:["L","EL"],M:["M","EM"],
+    N:["N","EN"],O:["O"],P:["P","PI"],Q:["Q","KYU"],
+    R:["R","AR"],S:["S","ES"],T:["T","TI","TE","I","AIR","AIRE","AYR","ER"],
+    U:["U","YU"],V:["V","VI"],W:["W","DOUBLE U"],X:["X","EKS"],
+    Y:["Y","WAI"],Z:["Z","ZED"]
   };
-
-  const compact=t.replace(/\s+/g," ");
-
-  if(contextAliases[expected]){
-    for(const alias of contextAliases[expected]){
-      if(compact===alias) return expected;
-    }
-  }
-
-  const oneLetter=compact.match(/(?:HURUF\s*)?([A-Z])(?:\s*HURUF)?$/);
-  if(oneLetter){
-    const spoken=oneLetter[1];
-    if(spoken===expected) return expected;
-  }
-
-  const general={
-    "A":"A","EI":"A","AY":"A",
-    "B":"B","BI":"B","BEE":"B",
-    "C":"C","SI":"C","SEE":"C",
-    "D":"D","DI":"D","DEE":"D",
-    "E":"E","EF":"F","F":"F",
-    "G":"G","JI":"G","JEE":"G",
-    "H":"H","EICH":"H",
-    "I":"I","AI":"I",
-    "J":"J","JE":"J","K":"K","KE":"K",
-    "L":"L","EL":"L","M":"M","EM":"M",
-    "N":"N","EN":"N","O":"O","P":"P","PI":"P",
-    "Q":"Q","KYU":"Q","R":"R","AR":"R",
-    "S":"S","ES":"S","T":"T","TI":"T",
-    "U":"U","YU":"U","V":"V","VI":"V",
-    "W":"W","DOUBLE U":"W","X":"X","EKS":"X",
-    "Y":"Y","WAI":"Y","Z":"Z","ZED":"Z"
-  };
-
-  return general[compact] || "";
+  if(aliases[expected]?.includes(t))return expected;
+  const match=t.match(/(?:HURUF\s*)?([A-Z])(?:\s*HURUF)?$/);
+  if(match&&match[1]===expected)return expected;
+  return "";
 }
 
 function setupRecognition(){
   if(!SpeechRecognition){
-    setStatus("⚠️ Gunakan Chrome atau Edge untuk aktiviti suara.","error");
     micButton.disabled=true;
+    micLabel.textContent="GUNA CHROME / EDGE";
+    setStatus("⚠️ Aktiviti suara memerlukan Chrome atau Microsoft Edge.","error");
     return;
   }
-
   recognition=new SpeechRecognition();
   recognition.lang="ms-MY";
   recognition.continuous=false;
@@ -236,103 +388,84 @@ function setupRecognition(){
 
   recognition.onstart=()=>{
     micButton.classList.add("listening");
-    setStatus("🎤 Mendengar... Sebut satu huruf.");
-    debugEl.textContent="";
+    micLabel.textContent="🎧 SEDANG MENDENGAR...";
+    setStatus("🎤 Dengar sini! Sebut satu huruf sahaja.","info");
   };
 
-  recognition.onend=()=>micButton.classList.remove("listening");
+  recognition.onend=()=>{
+    micButton.classList.remove("listening");
+    if(currentIndex<current().answer.length)micLabel.textContent="TEKAN UNTUK CUBA LAGI";
+  };
 
   recognition.onerror=e=>{
     micButton.classList.remove("listening");
+    micLabel.textContent="TEKAN UNTUK CUBA LAGI";
     if(e.error==="not-allowed"||e.error==="service-not-allowed")
-      setStatus("⚠️ Akses mikrofon disekat. Benarkan mikrofon untuk laman ini.","error");
+      setStatus("⚠️ Mikrofon disekat. Benarkan mikrofon untuk laman ini.","error");
     else if(e.error==="no-speech")
-      setStatus("😅 Saya tak dengar. Cuba sebut huruf sekali lagi.");
+      setStatus("😅 Saya tak dengar. Cuba sebut huruf dengan lebih kuat.","error");
     else
-      setStatus("😅 Pengecaman suara gagal. Cuba lagi.");
+      setStatus("😅 Cuba sekali lagi. Pastikan mikrofon aktif.","error");
   };
 
   recognition.onresult=e=>{
     const alternatives=e.results[0];
-    const raw=[];
     const expected=current().answer[currentIndex];
     let detected="";
-
     for(let i=0;i<alternatives.length;i++){
-      const transcript=alternatives[i].transcript;
-      raw.push(transcript);
-      const candidate=letterFromTranscript(transcript,expected);
-
-      if(candidate===expected){
-        detected=expected;
-        break;
-      }
-      if(!detected) detected=candidate;
+      const candidate=letterFromTranscript(alternatives[i].transcript,expected);
+      if(candidate===expected){detected=expected;break}
     }
-
-    debugEl.textContent="Dikesan: "+raw.join(" | ");
     checkLetter(detected);
   };
 }
 
 function startListening(){
-  if(!recognition)return;
-  if(currentIndex>=current().answer.length)return;
-  try{recognition.start()}catch(e){console.log(e)}
+  if(!recognition||currentIndex>=current().answer.length)return;
+  try{recognition.start()}catch(e){}
 }
 
 function checkLetter(letter){
-  if(!letter){
-    setStatus("😅 Saya tak dapat kenal huruf itu. Cuba sebut satu huruf sahaja.");
-    return;
-  }
-
-  const answer=current().answer;
-  const correct=answer[currentIndex];
-
-  if(letter===correct){
+  const expected=current().answer[currentIndex];
+  if(letter===expected){
+    beep(760,.1);
     const box=document.getElementById("letter-"+currentIndex);
-    box.textContent=correct;
-    box.classList.remove("empty");
+    box.textContent=expected;box.classList.remove("empty");box.classList.add("filled");
     currentIndex++;
+    progressFill.style.width=((currentShape/SHAPES.length)+
+      (currentIndex/current().answer.length/SHAPES.length))*100+"%";
 
-    if(currentIndex===answer.length){
-      stars++;
-      starsEl.textContent="⭐ "+stars;
-      setStatus("🎉 BETUL! Awak berjaya mengeja "+current().name+"!","success");
-      micButton.style.display="none";
-
-      if(currentShape<SHAPES.length-1)
+    if(currentIndex===current().answer.length){
+      stars++;updateTop();celebrate();
+      setStatus("🎉 BETUL! Semua huruf sudah lengkap! ⭐","success");
+      micButton.style.display="none";micLabel.textContent="";
+      if(currentShape<SHAPES.length-1){
         nextButton.style.display="inline-block";
-      else
-        setStatus("🏆 TAHNIAH! Semua bentuk berjaya dieja! ⭐ "+stars,"success");
+        setTimeout(()=>nextButton.focus(),250);
+      }else{
+        setTimeout(()=>finish.classList.add("show"),700);
+      }
     }else{
-      setStatus("✅ Betul! Sekarang sebut huruf seterusnya.","success");
+      setStatus("🌟 Betul! Hebat! Sekarang sebut huruf seterusnya.","success");
     }
   }else{
-    setStatus("❌ Salah. Cuba lagi!","error");
+    beep(250,.12);
+    setStatus("💡 Belum tepat. Cuba lagi — sebut satu huruf sahaja.","error");
   }
 }
 
 function nextShape(){
-  if(currentShape<SHAPES.length-1){
-    currentShape++;
-    loadShape();
-  }
+  if(currentShape<SHAPES.length-1){currentShape++;loadShape();window.scrollTo({top:0,behavior:"smooth"})}
 }
-
 function resetGame(){
-  currentShape=0;
-  stars=0;
-  loadShape();
+  currentShape=0;stars=0;finish.classList.remove("show");loadShape();window.scrollTo({top:0,behavior:"smooth"});
 }
-
 micButton.addEventListener("click",startListening);
 nextButton.addEventListener("click",nextShape);
 resetButton.addEventListener("click",resetGame);
+playAgain.addEventListener("click",resetGame);
 
-setupRecognition();
-loadShape();
+setupRecognition();loadShape();
 </script>
 </body>
 </html>
