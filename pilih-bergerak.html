@@ -277,6 +277,31 @@ body{position:fixed;inset:0}
   border:1px solid rgba(255,255,255,.2);
 }
 
+
+#confettiCanvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  z-index:90;pointer-events:none;
+}
+#feedbackBanner{
+  position:absolute;z-index:95;left:50%;top:34%;
+  transform:translate(-50%,-50%);
+  padding:18px 28px;border-radius:25px;
+  background:rgba(8,15,27,.88);
+  border:2px solid rgba(255,255,255,.28);
+  box-shadow:0 15px 45px rgba(0,0,0,.4);
+  text-align:center;font-weight:1000;
+  font-size:clamp(25px,5vw,52px);
+  white-space:nowrap;
+  animation:feedbackIn .45s ease-out;
+}
+#feedbackBanner.good{border-color:#65f2a0;color:#baffd4}
+#feedbackBanner.bad{border-color:#ff7e89;color:#ffd0d4}
+@keyframes feedbackIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.65)}
+  70%{transform:translate(-50%,-50%) scale(1.06)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+
 </style>
 </head>
 <body>
@@ -376,9 +401,121 @@ body{position:fixed;inset:0}
   </div>
 </div>
 
+
+<canvas id="confettiCanvas"></canvas>
+<div id="feedbackBanner" class="hidden"></div>
+
 <div id="debug"></div>
 
 <script>
+
+let audioCtx = null;
+
+function ensureAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === "suspended") audioCtx.resume();
+  }catch(e){}
+}
+
+function tone(freq, duration=.14, type="sine", volume=.06, delay=0){
+  try{
+    ensureAudio();
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type=type;
+    osc.frequency.value=freq;
+    gain.gain.setValueAtTime(0,audioCtx.currentTime+delay);
+    gain.gain.linearRampToValueAtTime(volume,audioCtx.currentTime+delay+.02);
+    gain.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+delay+duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime+delay);
+    osc.stop(audioCtx.currentTime+delay+duration+.03);
+  }catch(e){}
+}
+
+function soundStart(){
+  ensureAudio();
+  tone(523,.12,"sine",.06,0);
+  tone(659,.12,"sine",.06,.13);
+  tone(784,.18,"sine",.07,.26);
+}
+
+function soundTick(){
+  tone(700,.08,"square",.035);
+}
+
+function soundCorrect(){
+  ensureAudio();
+  tone(523,.12,"sine",.06,0);
+  tone(659,.12,"sine",.06,.12);
+  tone(784,.16,"sine",.07,.24);
+  tone(1047,.28,"sine",.08,.40);
+}
+
+function soundWrong(){
+  ensureAudio();
+  tone(330,.18,"sawtooth",.045,0);
+  tone(220,.28,"sawtooth",.04,.18);
+}
+
+function soundFinish(){
+  ensureAudio();
+  [523,659,784,1047,1319].forEach((f,i)=>tone(f,.18,"sine",.065,i*.11));
+}
+
+
+let confettiParticles=[];
+let confettiRAF=0;
+
+function launchConfetti(){
+  const c=document.getElementById("confettiCanvas");
+  const x=c.getContext("2d");
+  c.width=innerWidth*devicePixelRatio;
+  c.height=innerHeight*devicePixelRatio;
+  x.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  confettiParticles=[];
+  for(let i=0;i<115;i++){
+    confettiParticles.push({
+      x:innerWidth*.5+(Math.random()-.5)*120,
+      y:innerHeight*.34+(Math.random()-.5)*30,
+      vx:(Math.random()-.5)*11,
+      vy:-Math.random()*9-4,
+      g:.28+Math.random()*.18,
+      r:3+Math.random()*4,
+      rot:Math.random()*6,
+      vr:(Math.random()-.5)*.3,
+      life:70+Math.random()*45,
+      hue:Math.random()*360
+    });
+  }
+  cancelAnimationFrame(confettiRAF);
+  animateConfetti();
+}
+function animateConfetti(){
+  const c=document.getElementById("confettiCanvas");
+  const x=c.getContext("2d");
+  x.clearRect(0,0,innerWidth,innerHeight);
+  confettiParticles.forEach(p=>{
+    p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.rot+=p.vr;p.life--;
+    x.save();x.translate(p.x,p.y);x.rotate(p.rot);
+    x.fillStyle=`hsl(${p.hue},85%,60%)`;
+    x.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+    x.restore();
+  });
+  confettiParticles=confettiParticles.filter(p=>p.life>0 && p.y<innerHeight+30);
+  if(confettiParticles.length) confettiRAF=requestAnimationFrame(animateConfetti);
+  else x.clearRect(0,0,innerWidth,innerHeight);
+}
+
+function showFeedbackBanner(good, text){
+  const b=document.getElementById("feedbackBanner");
+  b.className=good?"good":"bad";
+  b.textContent=text;
+  b.classList.remove("hidden");
+  setTimeout(()=>b.classList.add("hidden"),2100);
+}
+
 const QUESTIONS = [
   {
     q:"Saya mempunyai 3 sisi dan 3 bucu. Apakah bentuk saya?",
@@ -464,6 +601,7 @@ function shuffleAnswers(item){
 let currentAnswers = {left:"",right:""};
 
 async function startCamera(){
+  ensureAudio();
   try{
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       throw new Error("Kamera web tidak disokong oleh pelayar ini.");
@@ -522,12 +660,14 @@ function loadQuestion(){
 
 window.startMove = function startMove(){
   if(!running || analysing) return;
+  ensureAudio();
+  soundStart();
   moveStartBtn.classList.add("hidden");
   moveStartBtn.disabled=true;
-  countdownEl.textContent="3";
-  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="2"; },700);
-  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="1"; },1400);
-  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="GERAK!"; beginAnalysis(); },2100);
+  countdownEl.textContent="3"; soundTick();
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="2"; soundTick(); },700);
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="1"; soundTick(); },1400);
+  setTimeout(()=>{ if(analysing) return; countdownEl.textContent="GERAK!"; soundStart(); beginAnalysis(); },2100);
 }
 
 function beginAnalysis(){
@@ -672,8 +812,18 @@ function showFeedback(chosen, correct){
   instructionEl.textContent = `Pilihan murid: ${chosen}`;
   countdownEl.textContent = correct ? "⭐ +1" : "❌";
   timerEl.textContent = "SEMAK";
+
+  if(correct){
+    soundCorrect();
+    launchConfetti();
+    showFeedbackBanner(true,"🎉 BETUL! +1 ⭐");
+  }else{
+    soundWrong();
+    showFeedbackBanner(false,"💡 CUBA LAGI!");
+  }
 }
 function showRetry(){
+  soundWrong();
   questionEl.textContent="🤔 Gerakan belum jelas";
   instructionEl.textContent="Pastikan murid bergerak jelas ke KIRI atau KANAN, kemudian tekan MULA semula.";
   countdownEl.textContent="CUBA LAGI";
@@ -685,12 +835,14 @@ function showRetry(){
 
 function finishGame(){
   running=false;
+  soundFinish();
   moveStartBtn.classList.add("hidden");
   document.getElementById("resultOverlay").classList.remove("hidden");
   document.getElementById("resultText").textContent=`⭐ ${score} / ${QUESTIONS.length}`;
   const pct=Math.round(score/QUESTIONS.length*100);
   document.getElementById("resultDetail").textContent=
-    `Markah: ${pct}%. Main semula untuk cuba sekali lagi.`;
+    `Markah: ${pct}% · ${score} jawapan betul daripada ${QUESTIONS.length}.`;
+  launchConfetti();
 }
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
