@@ -139,7 +139,6 @@ video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(1)}
  </div>
 </div>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 let FilesetResolver=null, PoseLandmarker=null;
 async function loadMediaPipe(){
@@ -216,38 +215,84 @@ function showResult(data){
  $("result").innerHTML=`🎉 <b>MASA TAMAT!</b> &nbsp; Kiri: ${left} murid &nbsp; | &nbsp; Kanan: ${right} murid<br>Jawapan betul: <b>${correct}</b>`;
  $("nextQuestion").classList.remove("hidden");
 }
-function initTeacher(){
- show("teacher");
- roomCode=code();
- $("roomCode").textContent="KOD BILIK: "+roomCode;
- $("teacherConn").textContent="🟡 Menghubungkan...";
- setTeacherQuestion();
-
- try{
-   peer=new Peer(roomCode,{secure:true});
- }catch(e){
-   $("teacherConn").textContent="🔴 PeerJS gagal dimulakan";
-   $("result").textContent="⚠️ Gagal memulakan sambungan. Sila refresh halaman.";
-   return;
- }
-
- peer.on("open",()=>{
-   $("teacherConn").textContent="🟡 Menunggu iPad...";
-   $("result").innerHTML="📱 <b>Buka laman ini pada iPad</b> dan masukkan kod <b>"+roomCode+"</b>.";
- });
- peer.on("connection",c=>{
-  conn=c;$("teacherConn").textContent="🟢 iPad Bersambung";
-  conn.on("data",d=>{if(d.type==="counts")showResult(d);});
-  conn.on("close",()=>{$("teacherConn").textContent="🔴 iPad Terputus"});
- });
- peer.on("error",e=>{$("teacherConn").textContent="⚠️ "+e.type});
- setTeacherQuestion();
+async function loadPeerJS(){
+  if(window.Peer) return true;
+  try{
+    await new Promise((resolve,reject)=>{
+      const s=document.createElement("script");
+      s.src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+      s.onload=resolve;s.onerror=reject;
+      document.head.appendChild(s);
+    });
+    return !!window.Peer;
+  }catch(e){
+    console.error(e);
+    return false;
+  }
 }
+
+async function initTeacher(){
+  show("teacher");
+  roomCode=code();
+  $("roomCode").textContent="🔑 KOD BILIK: "+roomCode;
+  $("teacherConn").textContent="🟡 Menunggu sambungan...";
+  setTeacherQuestion();
+
+  // Paparkan kod dahulu walaupun sambungan internet/PeerJS belum siap.
+  $("result").innerHTML="📱 Pada iPad, buka laman ini dan masukkan kod <b>"+roomCode+"</b>.";
+  $("startRound").disabled=true;
+  $("startRound").style.opacity=".5";
+
+  const loaded=await loadPeerJS();
+  if(!loaded){
+    $("teacherConn").textContent="🔴 Modul sambungan gagal dimuat";
+    $("result").innerHTML="⚠️ Kod bilik awak ialah <b>"+roomCode+"</b>. Sambungan iPad belum tersedia kerana servis sambungan gagal dimuat. Semak internet dan refresh.";
+    return;
+  }
+
+  try{
+    peer=new window.Peer(roomCode,{secure:true});
+  }catch(e){
+    $("teacherConn").textContent="🔴 Gagal mencipta bilik";
+    $("result").innerHTML="⚠️ Kod bilik <b>"+roomCode+"</b> telah dijana, tetapi sambungan belum dapat dimulakan.";
+    return;
+  }
+
+  peer.on("open",()=>{
+    $("teacherConn").textContent="🟡 Menunggu iPad...";
+    $("result").innerHTML="📱 Masukkan kod <b>"+roomCode+"</b> pada iPad. Bila bersambung, butang MULA akan aktif.";
+  });
+
+  peer.on("connection",c=>{
+    conn=c;
+    $("teacherConn").textContent="🟢 iPad Bersambung";
+    $("startRound").disabled=false;
+    $("startRound").style.opacity="1";
+    conn.on("data",d=>{if(d.type==="counts")showResult(d);});
+    conn.on("close",()=>{
+      $("teacherConn").textContent="🔴 iPad Terputus";
+      $("startRound").disabled=true;
+    });
+  });
+
+  peer.on("error",e=>{
+    console.error(e);
+    $("teacherConn").textContent="⚠️ "+(e.type||"Ralat sambungan");
+    $("result").innerHTML="🔑 Kod bilik: <b>"+roomCode+"</b><br>Semak sambungan internet dan cuba refresh jika iPad tidak dapat masuk.";
+  });
+}
+
 async function initCamera(){
  show("camera");
  const room=$("roomInput").value.trim().toUpperCase();
  if(!room){$("camStatus").textContent="⚠️ Masukkan kod bilik dahulu.";return}
- peer=new Peer({secure:true});
+ const peerLoaded=await loadPeerJS();
+ if(!peerLoaded){
+   $("cameraConn").textContent="🔴 PeerJS gagal dimuat";
+   $("camStatus").textContent="⚠️ Semak internet iPad dan cuba lagi.";
+   return;
+ }
+ peer=new window.Peer({secure:true});
  peer.on("open",()=>{
    conn=peer.connect(room,{reliable:true});
    conn.on("open",()=>{$("cameraConn").textContent="🟢 Bersambung ke guru";$("camStatus").textContent="📷 Kamera aktif. Tunggu arahan MULA.";});
