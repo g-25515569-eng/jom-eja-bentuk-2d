@@ -45,12 +45,15 @@ body{position:fixed;inset:0}
 #score{color:#fff}
 
 #questionBox{
-  position:absolute;z-index:10;left:5%;right:5%;top:14%;
+  position:absolute;z-index:10;left:4%;right:4%;top:13%;
   background:rgba(0,0,0,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(255,255,255,.22);border-radius:24px;padding:18px 20px;text-align:center;
   box-shadow:0 8px 30px rgba(0,0,0,.28)
 }
-#question{font-size:clamp(21px,4.2vw,42px);font-weight:900;line-height:1.15}
+#question{
+  font-size:clamp(22px,4.5vw,44px);font-weight:1000;line-height:1.15;
+  text-shadow:0 3px 8px rgba(0,0,0,.35)
+}
 #instruction{margin-top:8px;font-size:clamp(13px,2.3vw,20px);opacity:.9}
 #countdown{margin-top:6px;font-size:clamp(24px,5vw,44px);font-weight:1000;color:var(--yellow)}
 
@@ -104,8 +107,34 @@ body{position:fixed;inset:0}
   color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.35);
   border:3px solid rgba(255,255,255,.8);box-shadow:0 8px 20px rgba(0,0,0,.28)
 }
-#leftAnswer{background:rgba(35,117,255,.82)}
-#rightAnswer{background:rgba(236,61,83,.82)}
+#leftAnswer{background:linear-gradient(135deg,rgba(44,130,255,.92),rgba(76,92,255,.88))}
+#rightAnswer{background:linear-gradient(135deg,rgba(255,104,93,.92),rgba(238,67,109,.88))}
+.answer.pulse{animation:pulseAnswer .55s ease-in-out 2}
+@keyframes pulseAnswer{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.045)}
+}
+.answer.correct-side{
+  background:linear-gradient(135deg,#20c978,#16a85e)!important;
+  border-color:#b7ffd5!important;
+  box-shadow:0 0 0 5px rgba(49,209,124,.22),0 0 38px rgba(49,209,124,.72);
+  animation:correctPop .55s ease-out;
+}
+.answer.wrong-side{
+  background:linear-gradient(135deg,#ff5362,#d92f45)!important;
+  border-color:#ffc0c7!important;
+  box-shadow:0 0 0 5px rgba(255,93,108,.2),0 0 38px rgba(255,93,108,.62);
+  animation:wrongShake .5s ease-in-out;
+}
+@keyframes correctPop{
+  0%{transform:scale(.94)}60%{transform:scale(1.07)}100%{transform:scale(1)}
+}
+@keyframes wrongShake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-7px)}
+  75%{transform:translateX(7px)}
+}
+
 
 #meters{
   position:absolute;z-index:13;left:4%;right:4%;bottom:18%;display:flex;gap:12px;pointer-events:none
@@ -188,6 +217,10 @@ body{position:fixed;inset:0}
   <div id="rightAnswer" class="answer">KANAN</div>
 </div>
 
+<div id="startRound" class="roundStart hidden">
+  <button id="startRoundBtn" class="roundStartBtn">▶️ MULA<br><span>10 SAAT</span></button>
+</div>
+
 <div id="settings">
   <button class="smallBtn" id="flipBtn">↔️ Flip</button>
   <button class="smallBtn" id="helpBtn">❔ Cara Main</button>
@@ -211,7 +244,7 @@ body{position:fixed;inset:0}
 
 <div id="resultOverlay" class="hidden">
   <div class="card">
-    <h1 id="resultTitle">TAHNIAH! 🎉</h1>
+    <h1 id="resultTitle">🏆 TAMAT! 🎉</h1>
     <div id="resultText">⭐ 0 / 10</div>
     <p id="resultDetail"></p>
     <button class="bigBtn" id="againBtn">🔄 MAIN SEMULA</button>
@@ -522,13 +555,11 @@ function showSideResult(chosen){
 }
 
 function showFeedback(chosen, correct){
-  // Selepas masa tamat, kedua-dua kawasan jawapan akan bertukar warna:
-  // hijau = jawapan betul, merah = jawapan salah.
   showSideResult(chosen);
 
-  questionEl.textContent = correct ? "🎉 BETUL!" : "💡 JAWAPAN DITUNJUKKAN";
+  questionEl.textContent = correct ? "🎉 TAHNIAH! BETUL!" : "💡 SEMAK JAWAPAN";
   instructionEl.textContent = `Murid memilih: ${chosen}`;
-  countdownEl.textContent = correct ? "⭐ +1" : "❌";
+  countdownEl.textContent = correct ? "⭐ +1" : "❌ SALAH";
   timerEl.textContent = "SEMAK";
 }
 function showRetry(){
@@ -554,6 +585,7 @@ function finishGame(){
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.getElementById("startBtn").onclick=startCamera;
+document.getElementById("startRoundBtn").onclick=startCountdown;
 moveStartBtn.onclick=startMove;
 document.getElementById("againBtn").onclick=()=>{
   document.getElementById("resultOverlay").classList.add("hidden");
