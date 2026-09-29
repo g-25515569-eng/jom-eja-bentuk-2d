@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jom Eja Bentuk 2D</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+  font-family:Arial,sans-serif;
+  background:linear-gradient(135deg,#dff6ff,#f5e8ff); color:#222;
+}
+.game{
+  width:95%; max-width:900px; background:#fff; border-radius:30px; padding:35px;
+  text-align:center; box-shadow:0 15px 40px rgba(0,0,0,.15);
+}
+h1{margin:0 0 12px;font-size:42px;color:#4b3fbf}
+.instruction{font-size:24px;font-weight:bold;margin-bottom:20px}
+.shape-area{height:230px;display:flex;justify-content:center;align-items:center}
+.triangle{
+  width:0;height:0;border-left:100px solid transparent;border-right:100px solid transparent;
+  border-bottom:170px solid #ffca3a;filter:drop-shadow(0 8px 5px rgba(0,0,0,.2))
+}
+.word-title{font-size:20px;color:#666}
+.letters{min-height:70px;margin:15px auto;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.letter{
+  width:48px;height:58px;border:3px solid #4b3fbf;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold;
+  background:#f4f1ff
+}
+.letter.empty{color:#bbb;background:#fafafa}
+.mic-button{
+  margin-top:15px;width:90px;height:90px;border-radius:50%;border:none;
+  background:#4b3fbf;color:white;font-size:40px;cursor:pointer;
+  box-shadow:0 8px 18px rgba(75,63,191,.35)
+}
+.mic-button:disabled{opacity:.5;cursor:not-allowed}
+.mic-button.listening{background:#e63946;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.status{min-height:35px;margin-top:18px;font-size:22px;font-weight:bold}
+.success{color:#159447}.error{color:#e63946}
+.hint{margin-top:15px;color:#777;font-size:16px}
+.reset-button{margin-top:20px;padding:12px 25px;border:none;border-radius:12px;background:#eee;font-size:16px;cursor:pointer}
+.debug{margin-top:14px;font-size:14px;color:#999;min-height:20px}
+</style>
+</head>
+<body>
+<div class="game">
+  <h1>🔎 JOM EJA BENTUK 2D</h1>
+  <div class="instruction">🎯 Eja nama bentuk ini dengan suara</div>
+
+  <div class="shape-area"><div class="triangle"></div></div>
+
+  <div class="word-title">Nama bentuk:</div>
+  <div class="letters" id="letters"></div>
+
+  <button class="mic-button" id="micButton" type="button">🎤</button>
+
+  <div class="status" id="status">Tekan mikrofon dan sebut satu huruf.</div>
+  <div class="hint">Contoh: sebut <b>“S”</b>, kemudian <b>“E”</b>, kemudian <b>“G”</b>...</div>
+  <div class="debug" id="debug"></div>
+  <button class="reset-button" id="resetButton" type="button">🔄 Mula Semula</button>
+</div>
+
+<script>
+const ANSWER = "SEGITIGA";
+let currentIndex = 0;
+let recognition = null;
+
+const lettersContainer = document.getElementById("letters");
+const statusEl = document.getElementById("status");
+const debugEl = document.getElementById("debug");
+const micButton = document.getElementById("micButton");
+const resetButton = document.getElementById("resetButton");
+
+function createLetters(){
+  lettersContainer.innerHTML="";
+  for(let i=0;i<ANSWER.length;i++){
+    const box=document.createElement("div");
+    box.className="letter empty";
+    box.id="letter-"+i;
+    box.textContent="_";
+    lettersContainer.appendChild(box);
+  }
+}
+createLetters();
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+function normalize(text){
+  return text
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/[.,!?]/g,"")
+    .trim();
+}
+
+function letterFromTranscript(text){
+  const t=normalize(text);
+
+  const map = {
+    "A":"A","EI":"A","AY":"A","E":"E",
+    "B":"B","BI":"B","BEE":"B",
+    "C":"C","SI":"C","SEE":"C",
+    "D":"D","DI":"D","DEE":"D",
+    "EF":"F","F":"F",
+    "G":"G","JI":"G","JEE":"G",
+    "H":"H","EICH":"H",
+    "I":"I","AI":"I",
+    "J":"J","JE":"J",
+    "K":"K","KE":"K",
+    "L":"L","EL":"L",
+    "M":"M","EM":"M",
+    "N":"N","EN":"N",
+    "O":"O",
+    "P":"P","PI":"P",
+    "Q":"Q","KYU":"Q",
+    "R":"R","AR":"R",
+    "S":"S","ES":"S",
+    "T":"T","TI":"T",
+    "U":"U","YU":"U",
+    "V":"V","VI":"V",
+    "W":"W","DOUBLE U":"W",
+    "X":"X","EKS":"X",
+    "Y":"Y","WAI":"Y",
+    "Z":"Z","ZED":"Z"
+  };
+
+  if(map[t]) return map[t];
+
+  // Sesetengah browser boleh memulangkan perkataan seperti
+  // "huruf s" atau "s huruf".
+  const compact=t.replace(/\s+/g," ");
+  const match=compact.match(/(?:HURUF\s*)?([A-Z])(?:\s*HURUF)?$/);
+  if(match) return match[1];
+
+  // Cuba padanan berdasarkan perkataan yang mengandungi nama huruf.
+  for(const key in map){
+    if(t === key || t.includes(" "+key+" ")) return map[key];
+  }
+  return "";
+}
+
+function setStatus(msg, cls=""){
+  statusEl.className="status "+cls;
+  statusEl.textContent=msg;
+}
+
+function setupRecognition(){
+  if(!SpeechRecognition){
+    setStatus("⚠️ Chrome/Edge pada peranti ini tidak menyokong Speech Recognition.");
+    micButton.disabled=true;
+    return;
+  }
+
+  recognition=new SpeechRecognition();
+  recognition.lang="ms-MY";
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=8;
+
+  recognition.onstart=()=>{
+    micButton.classList.add("listening");
+    setStatus("🎤 Mendengar... Sebut satu huruf.");
+    debugEl.textContent="";
+  };
+
+  recognition.onend=()=>{
+    micButton.classList.remove("listening");
+  };
+
+  recognition.onerror=(event)=>{
+    micButton.classList.remove("listening");
+    console.log("Speech error:",event.error);
+
+    if(event.error==="not-allowed" || event.error==="service-not-allowed"){
+      setStatus("⚠️ Akses mikrofon masih disekat oleh browser.", "error");
+    }else if(event.error==="no-speech"){
+      setStatus("😅 Saya tak dengar suara. Cuba sebut huruf sekali lagi.");
+    }else{
+      setStatus("😅 Pengecaman suara gagal. Cuba lagi.");
+    }
+  };
+
+  recognition.onresult=(event)=>{
+    const alternatives=event.results[0];
+    const raw=[];
+    let detected="";
+
+    for(let i=0;i<alternatives.length;i++){
+      const transcript=alternatives[i].transcript;
+      raw.push(transcript);
+      if(!detected) detected=letterFromTranscript(transcript);
+    }
+
+    debugEl.textContent="Dikesan: "+raw.join(" | ");
+    checkLetter(detected);
+  };
+}
+
+function startListening(){
+  if(!recognition) return;
+  if(currentIndex>=ANSWER.length){
+    setStatus("🎉 Ejaan sudah lengkap!","success");
+    return;
+  }
+  try{
+    recognition.start();
+  }catch(e){
+    // Browser boleh beri InvalidStateError jika butang ditekan
+    // ketika recognition masih aktif.
+    console.log(e);
+  }
+}
+
+function checkLetter(letter){
+  if(!letter){
+    setStatus("😅 Saya tak dapat kenal huruf itu. Cuba sebut satu huruf sahaja.");
+    return;
+  }
+
+  const correct=ANSWER[currentIndex];
+
+  if(letter===correct){
+    const box=document.getElementById("letter-"+currentIndex);
+    box.textContent=correct;
+    box.classList.remove("empty");
+    currentIndex++;
+
+    if(currentIndex===ANSWER.length){
+      setStatus("🎉 BETUL! Awak berjaya mengeja SEGITIGA!","success");
+      micButton.style.display="none";
+    }else{
+      setStatus("✅ Betul! Sekarang sebut huruf seterusnya.","success");
+    }
+  }else{
+    setStatus("❌ Salah. Cuba lagi!","error");
+  }
+}
+
+function resetGame(){
+  currentIndex=0;
+  micButton.style.display="inline-block";
+  setStatus("Tekan mikrofon dan sebut satu huruf.");
+  debugEl.textContent="";
+  createLetters();
+}
+
+micButton.addEventListener("click",startListening);
+resetButton.addEventListener("click",resetGame);
+setupRecognition();
+</script>
+</body>
+</html>
