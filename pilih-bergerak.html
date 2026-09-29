@@ -226,10 +226,6 @@ body{position:fixed;inset:0}
   <div id="rightAnswer" class="answer">KANAN</div>
 </div>
 
-<div id="startRound" class="roundStart hidden">
-  <button id="startRoundBtn" class="roundStartBtn">▶️ MULA<br><span>10 SAAT</span></button>
-</div>
-
 <div id="settings">
   <button class="smallBtn" id="flipBtn">↔️ Flip</button>
   <button class="smallBtn" id="helpBtn">❔ Cara Main</button>
@@ -423,6 +419,7 @@ function loadQuestion(){
 function startMove(){
   if(!running || analysing) return;
   moveStartBtn.classList.add("hidden");
+  moveStartBtn.disabled=true;
   beginAnalysis();
 }
 
@@ -596,7 +593,6 @@ function finishGame(){
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
 document.getElementById("startBtn").onclick=startCamera;
-document.getElementById("startRoundBtn").onclick=startCountdown;
 moveStartBtn.onclick=startMove;
 document.getElementById("againBtn").onclick=()=>{
   document.getElementById("resultOverlay").classList.add("hidden");
