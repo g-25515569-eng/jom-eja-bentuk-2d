@@ -2,369 +2,217 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎮 Bentuk 2D — Pilih & Bergerak</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>🎮 Bentuk 2D — Misi Bergerak</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:"Trebuchet MS",Arial,sans-serif;background:linear-gradient(135deg,#6f55ee,#4fc8ff);color:#29294a;min-height:100vh}
-button,input{font:inherit}
-.screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
-.card{width:min(1100px,96vw);background:#fff;border-radius:30px;box-shadow:0 25px 70px #26306a55;overflow:hidden}
-.hero{padding:26px 30px;background:linear-gradient(135deg,#7357f5,#9a72ff);color:#fff}
-.hero h1{margin:0;font-size:clamp(30px,5vw,54px)}
-.hero p{margin:8px 0 0;font-weight:800;font-size:18px}
-.body{padding:28px}
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
-.mode{border:4px solid #eeeaff;border-radius:22px;padding:24px;text-align:center;background:#faf9ff}
-.mode h2{margin:8px 0;color:#6248dc}.mode p{color:#686a80;font-weight:700}
-.bigbtn{border:0;border-radius:16px;padding:15px 24px;font-weight:900;cursor:pointer;background:#7055ed;color:#fff;box-shadow:0 5px 0 #4d38bd}
-.bigbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #4d38bd}
-.input{width:100%;padding:15px;border:3px solid #ded9ff;border-radius:14px;text-align:center;font-size:20px;font-weight:900;outline:none}
-.input:focus{border-color:#7357f5}
-.hidden{display:none!important}
-.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;background:#fff7c7;padding:14px 20px;border-bottom:3px dashed #eadb72}
-.pill{padding:8px 14px;border-radius:999px;font-weight:900;background:#eeeaff;color:#5d48cf}
-.timer{font-size:38px;color:#ef4c79;font-weight:1000;min-width:90px;text-align:center}
-.question{padding:25px;text-align:center}
-.question h2{font-size:clamp(25px,4vw,43px);margin:10px auto 22px;max-width:900px;line-height:1.15}
-.question .hint{font-size:18px;font-weight:800;color:#71738b}
-.answers{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:25px}
-.answer{min-height:210px;border-radius:28px;border:6px solid #fff;box-shadow:0 10px 0 rgba(0,0,0,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;position:relative;overflow:hidden}
-.answer.left{background:linear-gradient(145deg,#ff6b9e,#ff4d80)}
-.answer.right{background:linear-gradient(145deg,#43baff,#258ce7)}
-.answer .side{font-size:20px;font-weight:1000;opacity:.9}
-.answer .name{font-size:clamp(25px,4vw,42px);font-weight:1000;margin:10px 0}
-.answer .arrow{font-size:55px}
-.answer.correct{outline:8px solid #48d68d;transform:scale(1.02)}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:"Trebuchet MS",Arial,sans-serif;background:#17183a;color:#fff}
+button{font:inherit}
+#app{position:relative;width:100vw;height:100vh;overflow:hidden;background:#17183a}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#11152a}
+.overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(22,20,65,.9) 0%,rgba(30,20,80,.42) 30%,rgba(15,15,45,.12) 60%,rgba(18,15,55,.78) 100%);pointer-events:none}
+.top{position:absolute;top:0;left:0;right:0;padding:max(16px,env(safe-area-inset-top)) 20px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;z-index:5}
+.badge{background:#ffffffee;color:#5142b8;border-radius:999px;padding:9px 15px;font-weight:1000;font-size:16px;box-shadow:0 4px 14px #0004}
+.timer{font-size:clamp(35px,6vw,65px);font-weight:1000;text-shadow:0 4px 0 #0005;min-width:90px;text-align:center;color:#ffe04e}
+.score{background:#ffca3a;color:#5d4300;border-radius:999px;padding:9px 15px;font-size:18px;font-weight:1000}
+.questionBox{position:absolute;top:15%;left:50%;transform:translateX(-50%);width:min(900px,92vw);z-index:5;text-align:center}
+.questionBox .small{font-size:clamp(16px,2.4vw,23px);font-weight:900;text-shadow:0 3px 5px #0008}
+.question{margin:8px auto 0;background:#fffffff0;color:#302d5c;border-radius:25px;padding:18px 24px;font-size:clamp(25px,4.4vw,48px);font-weight:1000;line-height:1.08;box-shadow:0 10px 30px #0005}
+.answers{position:absolute;left:0;right:0;bottom:7%;display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:0 22px;z-index:6}
+.answer{min-height:135px;border:5px solid #fff;border-radius:28px;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 10px 0 #0003,0 15px 30px #0004;transition:.2s}
+.left{background:linear-gradient(145deg,#ff669b,#ee3f79)}.right{background:linear-gradient(145deg,#48bdff,#2389e9)}
+.answer .dir{font-size:18px;font-weight:1000}.answer .name{font-size:clamp(24px,4vw,43px);font-weight:1000;margin:5px 0}
+.answer.correct{outline:8px solid #55e58f;transform:scale(1.03);filter:brightness(1.08)}
 .answer.wrong{filter:grayscale(.7);opacity:.55}
-.result{margin:22px auto 0;padding:18px;border-radius:20px;background:#f1fff7;border:3px solid #bdeed2;font-size:22px;font-weight:1000;color:#138353;max-width:850px}
-.camera-layout{display:grid;grid-template-columns:1.6fr 1fr;gap:18px}
-.video-box{position:relative;background:#101528;border-radius:24px;overflow:hidden;min-height:400px}
-video{width:100%;height:100%;object-fit:cover;display:block;transform:scaleX(1)}
-.zone{position:absolute;top:0;bottom:0;width:42%;display:flex;align-items:flex-end;justify-content:center;padding-bottom:15px;font-size:22px;font-weight:1000;color:#fff;text-shadow:0 2px 4px #000}
-.zone.l{left:0;background:linear-gradient(90deg,#ff5d9250,transparent)}
-.zone.r{right:0;background:linear-gradient(270deg,#35a9ff50,transparent)}
-.line{position:absolute;left:50%;top:0;bottom:0;border-left:3px dashed #fff8}
-.cam-side{background:#f8f7ff;border-radius:24px;padding:20px}
-.cam-side h2{margin-top:0;color:#5f47d2}
-.counts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:15px 0}
-.count{border-radius:18px;padding:15px;text-align:center;color:#fff;font-weight:1000}
-.count b{display:block;font-size:44px}.count.l{background:#ff638f}.count.r{background:#36aaf3}
-.cam-status{padding:13px;border-radius:14px;background:#fff7c8;font-weight:900}
-.qmini{font-weight:900;margin:14px 0;color:#5c5e73}
-@media(max-width:750px){.mode-grid,.answers,.camera-layout{grid-template-columns:1fr}.video-box{min-height:300px}.body{padding:18px}.answer{min-height:160px}}
+.message{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:10;background:#fff;color:#4f3ab7;border-radius:30px;padding:25px 30px;text-align:center;width:min(700px,88vw);box-shadow:0 20px 60px #0007;display:none}
+.message.show{display:block}.message h1{margin:0;font-size:clamp(30px,5vw,58px)}.message p{margin:8px 0 0;font-size:20px;font-weight:900}
+.big{font-size:55px;margin-bottom:4px}
+.start{position:absolute;z-index:20;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,88vw);text-align:center;background:#fff;color:#36305f;border-radius:34px;padding:30px;box-shadow:0 25px 80px #0008}
+.start h1{font-size:clamp(32px,6vw,60px);color:#684ee5;margin:0 0 8px}.start p{font-size:19px;font-weight:800;color:#6b6c80}
+.btn{border:0;border-radius:18px;background:linear-gradient(135deg,#7155f3,#9a70ff);color:#fff;padding:16px 28px;font-size:20px;font-weight:1000;box-shadow:0 6px 0 #4d38bc;cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 #4d38bc}
+.status{position:absolute;z-index:7;left:50%;bottom:1.5%;transform:translateX(-50%);background:#17163dcc;border:2px solid #ffffff55;border-radius:999px;padding:7px 14px;font-size:14px;font-weight:900;white-space:nowrap}
+.hidden{display:none!important}
+.confetti{position:fixed;top:-30px;z-index:50;font-size:25px;animation:fall 1.8s linear forwards;pointer-events:none}@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}
+@media(max-width:700px){.answers{gap:10px;padding:0 10px}.answer{min-height:105px;border-radius:20px}.questionBox{top:17%}.question{padding:14px 16px}.badge{font-size:13px}.score{font-size:14px}}
 </style>
 </head>
 <body>
-<div id="home" class="screen">
-  <div class="card">
-    <div class="hero">
-      <h1>🎮 BENTUK 2D: PILIH & BERGERAK</h1>
-      <p>Murid baca ciri bentuk → pilih nama bentuk → bergerak ke KIRI atau KANAN!</p>
-    </div>
-    <div class="body">
-      <div class="mode-grid">
-        <div class="mode">
-          <div style="font-size:60px">📽️</div>
-          <h2>SKRIN GURU</h2>
-          <p>Gunakan pada laptop/komputer yang disambungkan ke projektor.</p>
-          <button class="bigbtn" id="teacherBtn">🚀 Mula Permainan</button>
-        </div>
-        <div class="mode">
-          <div style="font-size:60px">📱</div>
-          <h2>KAMERA iPAD</h2>
-          <p>Gunakan iPad sebagai kamera yang menghadap murid.</p>
-          <input id="roomInput" class="input" maxlength="12" placeholder="Masukkan KOD BILIK">
-          <br><br>
-          <button class="bigbtn" id="cameraBtn">📷 Sambung Kamera</button>
-        </div>
-      </div>
-      <p style="text-align:center;color:#777;font-weight:700;margin-top:25px">
-        💡 Untuk versi pertama, sistem mengira murid yang berada di zon kiri/kanan. Pastikan kedua-dua zon jelas di hadapan kamera.
-      </p>
-    </div>
-  </div>
-</div>
+<div id="app">
+  <video id="video" autoplay muted playsinline></video>
+  <div class="overlay"></div>
 
-<div id="teacher" class="screen hidden">
- <div class="card">
   <div class="top">
-    <span class="pill">📽️ SKRIN GURU</span>
-    <span id="roomCode" class="pill">KOD BILIK: ...</span>
-    <span id="teacherConn" class="pill">🟡 Menunggu iPad...</span>
+    <div class="badge" id="round">🎮 MISI 1 / 10</div>
+    <div class="timer" id="timer">5</div>
+    <div class="score" id="score">⭐ 0</div>
   </div>
-  <div class="question">
-    <div class="hint">Baca ciri bentuk di bawah. Apabila guru tekan MULA, murid bergerak!</div>
-    <h2 id="questionText">...</h2>
-    <div id="timer" class="timer">5</div>
-    <div class="answers">
-      <div id="leftAnswer" class="answer left"><div class="side">⬅️ KIRI</div><div id="leftName" class="name">...</div><div class="arrow">👈</div></div>
-      <div id="rightAnswer" class="answer right"><div class="side">KANAN ➡️</div><div id="rightName" class="name">...</div><div class="arrow">👉</div></div>
-    </div>
-    <div id="result" class="result">Sedia untuk soalan pertama!</div>
-    <br>
-    <button id="startRound" class="bigbtn">🚦 MULA!</button>
-    <button id="nextQuestion" class="bigbtn hidden">➡️ SOALAN SETERUSNYA</button>
-    <button id="teacherHome" class="bigbtn" style="background:#eeeef7;color:#555;box-shadow:0 5px 0 #d8d8e5">🏠 MENU</button>
-  </div>
- </div>
-</div>
 
-<div id="camera" class="screen hidden">
- <div class="card">
-  <div class="top">
-    <span class="pill">📱 KAMERA iPAD</span>
-    <span id="cameraConn" class="pill">⏳ Menyambung...</span>
+  <div class="questionBox">
+    <div class="small">🧠 Baca ciri-ciri bentuk. Kemudian BERGERAK ke jawapan!</div>
+    <div class="question" id="question">Tekan MULA untuk memulakan permainan.</div>
   </div>
-  <div class="body">
-   <div class="camera-layout">
-    <div class="video-box">
-      <video id="video" autoplay muted playsinline></video>
-      <div class="zone l">⬅️ KIRI</div>
-      <div class="zone r">KANAN ➡️</div>
-      <div class="line"></div>
+
+  <div class="answers">
+    <div class="answer left" id="leftAnswer">
+      <div class="dir">⬅️ KIRI</div><div class="name" id="leftName">—</div>
     </div>
-    <div class="cam-side">
-      <h2>🤖 Mata Robot</h2>
-      <div id="camStatus" class="cam-status">Memuatkan kamera...</div>
-      <div class="counts">
-        <div class="count l"><span>KIRI</span><b id="leftCount">0</b></div>
-        <div class="count r"><span>KANAN</span><b id="rightCount">0</b></div>
-      </div>
-      <div class="qmini">Pastikan kamera nampak seluruh kawasan murid. Murid yang berada di tengah tidak dikira.</div>
-      <button id="cameraHome" class="bigbtn">🏠 Menu</button>
+    <div class="answer right" id="rightAnswer">
+      <div class="dir">KANAN ➡️</div><div class="name" id="rightName">—</div>
     </div>
-   </div>
   </div>
- </div>
+
+  <div class="message" id="message"></div>
+
+  <div class="start" id="startPanel">
+    <div class="big">🤖📷</div>
+    <h1>MISI BENTUK 2D</h1>
+    <p>iPad ini akan menjadi <b>kamera + otak permainan</b>.<br>Pastikan murid berada di hadapan kamera.</p>
+    <button class="btn" id="startButton">🚀 BENARKAN KAMERA & MULA</button>
+    <p style="font-size:14px;margin-top:16px">💡 Selepas bermula, awak boleh mirror skrin iPad ke LCD/projektor.</p>
+  </div>
+
+  <div class="status" id="status">🤖 Menunggu permainan...</div>
 </div>
 
 <script>
-let FilesetResolver=null, PoseLandmarker=null;
-async function loadMediaPipe(){
-  if(FilesetResolver && PoseLandmarker) return true;
-  try{
-    const mod = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm");
-    FilesetResolver = mod.FilesetResolver;
-    PoseLandmarker = mod.PoseLandmarker;
-    return true;
-  }catch(e){
-    console.error("MediaPipe gagal dimuat:",e);
-    return false;
-  }
-}
-
 const QUESTIONS=[
  {q:"Saya mempunyai 3 sisi dan 3 bucu. Apakah bentuk saya?",a:"SEGI TIGA"},
  {q:"Saya mempunyai 4 sisi yang sama panjang dan 4 bucu. Apakah bentuk saya?",a:"SEGI EMPAT SAMA"},
  {q:"Saya mempunyai satu permukaan melengkung dan tiada bucu. Apakah bentuk saya?",a:"BULATAN"},
  {q:"Saya mempunyai 4 sisi dan 4 bucu. Dua sisi saya lebih panjang daripada dua sisi yang lain.",a:"SEGI EMPAT TEPAT"},
  {q:"Saya mempunyai 3 bucu. Apakah bentuk saya?",a:"SEGI TIGA"},
- {q:"Saya mempunyai 4 sisi sama panjang. Apakah bentuk saya?",a:"SEGI EMPAT SAMA"},
- {q:"Saya tidak mempunyai sisi lurus dan tidak mempunyai bucu.",a:"BULATAN"},
- {q:"Saya mempunyai 4 bucu dan bentuk saya lebih panjang daripada lebarnya.",a:"SEGI EMPAT TEPAT"},
- {q:"Saya mempunyai sisi lurus yang paling sedikit. Apakah bentuk saya?",a:"SEGI TIGA"},
- {q:"Semua sisi saya mempunyai panjang yang sama.",a:"SEGI EMPAT SAMA"}
+ {q:"Semua sisi saya mempunyai panjang yang sama.",a:"SEGI EMPAT SAMA"},
+ {q:"Saya tidak mempunyai bucu.",a:"BULATAN"},
+ {q:"Saya mempunyai 4 bucu dan lebih panjang daripada lebarnya.",a:"SEGI EMPAT TEPAT"},
+ {q:"Saya mempunyai tiga sisi lurus.",a:"SEGI TIGA"},
+ {q:"Saya mempunyai empat sisi sama panjang.",a:"SEGI EMPAT SAMA"}
 ];
 
-let peer=null,conn=null,roomCode="",currentQ=null,timer=null,timeLeft=5,questionIndex=0;
-let poseLandmarker=null,stream=null,lastSent=0;
+let video=document.getElementById("video");
+let stream=null,poseLandmarker=null,roundActive=false,questionIndex=0,timeLeft=5,timerId=null;
+let current=null,leftOption="",rightOption="",score=0;
+let latestLeft=0,latestRight=0,lastDetect=0;
 
 const $=id=>document.getElementById(id);
-function show(id){["home","teacher","camera"].forEach(x=>$(x).classList.toggle("hidden",x!==id));}
-function code(){return "B2D-"+Math.random().toString(36).slice(2,7).toUpperCase();}
-function shufflePair(answer){
- let other=QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)].a;
- while(other===answer) other=QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)].a;
- return Math.random()<.5?[answer,other]:[other,answer];
+
+function shuffleOptions(answer){
+  let other;
+  do{other=QUESTIONS[Math.floor(Math.random()*QUESTIONS.length)].a}while(other===answer);
+  return Math.random()<.5?[answer,other]:[other,answer];
 }
-function setTeacherQuestion(){
- currentQ=QUESTIONS[questionIndex%QUESTIONS.length];
- const pair=shufflePair(currentQ.a);
- $("questionText").textContent=currentQ.q;
- $("leftName").textContent=pair[0];$("rightName").textContent=pair[1];
- $("leftAnswer").dataset.answer=pair[0];$("rightAnswer").dataset.answer=pair[1];
- $("result").textContent="Sedia! Tekan MULA dan murid bergerak.";
- $("startRound").classList.remove("hidden");$("nextQuestion").classList.add("hidden");
- $("leftAnswer").classList.remove("correct","wrong");$("rightAnswer").classList.remove("correct","wrong");
- $("timer").textContent="5";
+
+function setQuestion(){
+  current=QUESTIONS[questionIndex%QUESTIONS.length];
+  [leftOption,rightOption]=shuffleOptions(current.a);
+  $("question").textContent=current.q;
+  $("leftName").textContent=leftOption;
+  $("rightName").textContent=rightOption;
+  $("round").textContent=`🎮 MISI ${questionIndex+1} / ${QUESTIONS.length}`;
+  $("leftAnswer").classList.remove("correct","wrong");
+  $("rightAnswer").classList.remove("correct","wrong");
+  $("message").classList.remove("show");
+  $("timer").textContent="5";
 }
-function teacherStart(){
- if(!conn||!conn.open){$("result").textContent="⚠️ iPad belum bersambung. Masukkan kod bilik pada iPad dahulu.";return}
- $("startRound").classList.add("hidden");timeLeft=5;$("timer").textContent=timeLeft;
- $("result").textContent="🏃 MURID BERGERAK SEKARANG!";
- conn.send({type:"start",seconds:5});
- timer=setInterval(()=>{
-  timeLeft--;$("timer").textContent=timeLeft;
-  if(timeLeft<=0){clearInterval(timer);finishRound()}
- },1000);
+
+function confetti(){
+  ["⭐","🎉","✨","🌟","🎈"].forEach((x,i)=>{
+    for(let j=0;j<6;j++){
+      const e=document.createElement("div");e.className="confetti";e.textContent=x;
+      e.style.left=(Math.random()*100)+"vw";e.style.animationDelay=(Math.random()*.4)+"s";
+      document.body.appendChild(e);setTimeout(()=>e.remove(),2300);
+    }
+  });
 }
+
+function startRound(){
+  roundActive=true;timeLeft=5;
+  $("timer").textContent=timeLeft;
+  $("status").textContent="🏃 GERAK SEKARANG! Pilih kiri atau kanan!";
+  timerId=setInterval(()=>{
+    timeLeft--; $("timer").textContent=timeLeft;
+    if(timeLeft<=0){clearInterval(timerId);finishRound()}
+  },1000);
+}
+
 function finishRound(){
- if(conn)conn.send({type:"stop"});
- setTimeout(()=>conn&&conn.send({type:"getCounts"}),250);
-}
-function showResult(data){
- const left=Number(data.left||0),right=Number(data.right||0);
- const correct=currentQ.a;
- const leftCorrect=$("leftAnswer").dataset.answer===correct;
- const winner=leftCorrect?left:right;
- $("leftAnswer").classList.toggle("correct",leftCorrect);
- $("rightAnswer").classList.toggle("correct",!leftCorrect);
- $("leftAnswer").classList.toggle("wrong",!leftCorrect);
- $("rightAnswer").classList.toggle("wrong",leftCorrect);
- $("result").innerHTML=`🎉 <b>MASA TAMAT!</b> &nbsp; Kiri: ${left} murid &nbsp; | &nbsp; Kanan: ${right} murid<br>Jawapan betul: <b>${correct}</b>`;
- $("nextQuestion").classList.remove("hidden");
-}
-async function loadPeerJS(){
-  if(window.Peer) return true;
-  try{
-    await new Promise((resolve,reject)=>{
-      const s=document.createElement("script");
-      s.src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
-      s.onload=resolve;s.onerror=reject;
-      document.head.appendChild(s);
-    });
-    return !!window.Peer;
-  }catch(e){
-    console.error(e);
-    return false;
-  }
+  roundActive=false;
+  const leftCorrect=leftOption===current.a;
+  const rightCorrect=rightOption===current.a;
+  const correctCount=leftCorrect?latestLeft:latestRight;
+  score+=correctCount;
+  $("score").textContent="⭐ "+score;
+  $(leftCorrect?"leftAnswer":"rightAnswer").classList.add("correct");
+  $(leftCorrect?"rightAnswer":"leftAnswer").classList.add("wrong");
+  $("message").innerHTML=`<h1>⏰ MASA TAMAT!</h1><p>Jawapan: <b>${current.a}</b></p><p>⬅️ Kiri: ${latestLeft} &nbsp; | &nbsp; ➡️ Kanan: ${latestRight}</p>`;
+  $("message").classList.add("show");
+  $("status").textContent="🎉 Hebat! Bersedia untuk soalan seterusnya...";
+  confetti();
+  setTimeout(()=>{
+    if(questionIndex<QUESTIONS.length-1){questionIndex++;setQuestion();startRound()}
+    else{
+      $("message").innerHTML=`<div class="big">🏆</div><h1>TAHNIAH!</h1><p>Semua 10 misi selesai!</p><p>⭐ Markah: ${score}</p><button class="btn" onclick="location.reload()">🔄 MAIN LAGI</button>`;
+      $("message").classList.add("show");
+      $("status").textContent="🏆 Permainan tamat!";
+    }
+  },2600);
 }
 
-async function initTeacher(){
-  show("teacher");
-  roomCode=code();
-  $("roomCode").textContent="🔑 KOD BILIK: "+roomCode;
-  $("teacherConn").textContent="🟡 Menunggu sambungan...";
-  setTeacherQuestion();
-
-  // Paparkan kod dahulu walaupun sambungan internet/PeerJS belum siap.
-  $("result").innerHTML="📱 Pada iPad, buka laman ini dan masukkan kod <b>"+roomCode+"</b>.";
-  $("startRound").disabled=true;
-  $("startRound").style.opacity=".5";
-
-  const loaded=await loadPeerJS();
-  if(!loaded){
-    $("teacherConn").textContent="🔴 Modul sambungan gagal dimuat";
-    $("result").innerHTML="⚠️ Kod bilik awak ialah <b>"+roomCode+"</b>. Sambungan iPad belum tersedia kerana servis sambungan gagal dimuat. Semak internet dan refresh.";
-    return;
-  }
-
-  try{
-    peer=new window.Peer(roomCode,{secure:true});
-  }catch(e){
-    $("teacherConn").textContent="🔴 Gagal mencipta bilik";
-    $("result").innerHTML="⚠️ Kod bilik <b>"+roomCode+"</b> telah dijana, tetapi sambungan belum dapat dimulakan.";
-    return;
-  }
-
-  peer.on("open",()=>{
-    $("teacherConn").textContent="🟡 Menunggu iPad...";
-    $("result").innerHTML="📱 Masukkan kod <b>"+roomCode+"</b> pada iPad. Bila bersambung, butang MULA akan aktif.";
-  });
-
-  peer.on("connection",c=>{
-    conn=c;
-    $("teacherConn").textContent="🟢 iPad Bersambung";
-    $("startRound").disabled=false;
-    $("startRound").style.opacity="1";
-    conn.on("data",d=>{if(d.type==="counts")showResult(d);});
-    conn.on("close",()=>{
-      $("teacherConn").textContent="🔴 iPad Terputus";
-      $("startRound").disabled=true;
-    });
-  });
-
-  peer.on("error",e=>{
-    console.error(e);
-    $("teacherConn").textContent="⚠️ "+(e.type||"Ralat sambungan");
-    $("result").innerHTML="🔑 Kod bilik: <b>"+roomCode+"</b><br>Semak sambungan internet dan cuba refresh jika iPad tidak dapat masuk.";
-  });
-}
-
-async function initCamera(){
- show("camera");
- const room=$("roomInput").value.trim().toUpperCase();
- if(!room){$("camStatus").textContent="⚠️ Masukkan kod bilik dahulu.";return}
- const peerLoaded=await loadPeerJS();
- if(!peerLoaded){
-   $("cameraConn").textContent="🔴 PeerJS gagal dimuat";
-   $("camStatus").textContent="⚠️ Semak internet iPad dan cuba lagi.";
-   return;
- }
- peer=new window.Peer({secure:true});
- peer.on("open",()=>{
-   conn=peer.connect(room,{reliable:true});
-   conn.on("open",()=>{$("cameraConn").textContent="🟢 Bersambung ke guru";$("camStatus").textContent="📷 Kamera aktif. Tunggu arahan MULA.";});
-   conn.on("data",d=>handleCameraCommand(d));
-   conn.on("error",()=>{$("cameraConn").textContent="⚠️ Sambungan gagal"});
- });
- peer.on("error",e=>{$("cameraConn").textContent="⚠️ "+e.type});
- try{
-   stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}},audio:false});
-   $("video").srcObject=stream;
-   $("camStatus").textContent="📷 Kamera dibuka. Memuatkan AI...";
-   const ok=await loadMediaPipe();
-   if(!ok){
-     $("camStatus").textContent="⚠️ AI kamera gagal dimuat. Semak internet iPad dan cuba lagi.";
-     return;
-   }
-   await setupPose();
- }catch(e){
-   $("camStatus").textContent="⚠️ Kamera tidak dapat dibuka. Benarkan akses kamera pada Safari/Chrome.";
- }
-}
-async function setupPose(){
- if(!FilesetResolver || !PoseLandmarker){
-   $("camStatus").textContent="⚠️ Modul AI belum tersedia.";
-   return;
- }
- const vision=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm");
- poseLandmarker=await PoseLandmarker.createFromOptions(vision,{
-  baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"},
-  runningMode:"VIDEO",numPoses:10,
-  minPoseDetectionConfidence:.45,minPosePresenceConfidence:.45,minTrackingConfidence:.45
- });
- $("camStatus").textContent="🤖 AI kamera siap. Tunggu MULA!";
- requestAnimationFrame(detectLoop);
-}
-let detecting=false,roundActive=false;
 function detectLoop(now){
- if(!poseLandmarker||!$("video").videoWidth){requestAnimationFrame(detectLoop);return}
- try{
-  const res=poseLandmarker.detectForVideo($("video"),now);
-  let l=0,r=0;
-  if(roundActive){
-   for(const pose of res.landmarks){
-    const hipL=pose[23],hipR=pose[24];
-    if(!hipL||!hipR)continue;
-    const x=(hipL.x+hipR.x)/2;
-    if(x<.44)l++; else if(x>.56)r++;
-   }
-   $("leftCount").textContent=l;$("rightCount").textContent=r;
-   if(conn&&conn.open&&now-lastSent>250){conn.send({type:"counts",left:l,right:r});lastSent=now;}
+  if(!poseLandmarker || video.readyState<2){requestAnimationFrame(detectLoop);return}
+  try{
+    const res=poseLandmarker.detectForVideo(video,now);
+    let l=0,r=0;
+    if(roundActive){
+      for(const pose of res.landmarks){
+        const points=[pose[11],pose[12],pose[23],pose[24]].filter(Boolean);
+        if(points.length<2)continue;
+        const x=points.reduce((s,p)=>s+p.x,0)/points.length;
+        if(x<.45)l++;
+        else if(x>.55)r++;
+      }
+      latestLeft=l;latestRight=r;
+      $("status").textContent=`👀 KIRI ${l}  |  KANAN ${r}`;
+    }
+  }catch(e){}
+  requestAnimationFrame(detectLoop);
+}
+
+async function loadAI(){
+  const mod=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/+esm");
+  const vision=await mod.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm");
+  poseLandmarker=await mod.PoseLandmarker.createFromOptions(vision,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task"},
+    runningMode:"VIDEO",numPoses:10,
+    minPoseDetectionConfidence:.4,minPosePresenceConfidence:.4,minTrackingConfidence:.4
+  });
+  requestAnimationFrame(detectLoop);
+}
+
+async function startGame(){
+  $("startPanel").classList.add("hidden");
+  $("status").textContent="📷 Membuka kamera...";
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},
+      audio:false
+    });
+    video.srcObject=stream;
+    await video.play();
+    $("status").textContent="🤖 Memuatkan AI...";
+    await loadAI();
+    $("status").textContent="🟢 Kamera & AI siap!";
+    setQuestion();
+    setTimeout(startRound,1200);
+  }catch(e){
+    $("startPanel").classList.remove("hidden");
+    $("status").textContent="⚠️ Kamera/AI gagal dimulakan. Benarkan kamera dan pastikan internet aktif.";
+    alert("Sila benarkan akses kamera. Jika Safari tidak membenarkan kamera, buka laman ini melalui HTTPS GitHub Pages.");
   }
- }catch(e){}
- requestAnimationFrame(detectLoop);
 }
-function handleCameraCommand(d){
- if(d.type==="start"){
-  roundActive=true;$("leftCount").textContent=0;$("rightCount").textContent=0;
-  $("camStatus").textContent="🏃 KIRA! Murid bergerak ke KIRI atau KANAN!";
- }
- if(d.type==="stop"){
-  roundActive=false;$("camStatus").textContent="⏰ MASA TAMAT! Menunggu keputusan guru...";
- }
- if(d.type==="getCounts"&&conn&&conn.open){
-  conn.send({type:"counts",left:Number($("leftCount").textContent),right:Number($("rightCount").textContent)});
- }
-}
-$("teacherBtn").onclick=initTeacher;
-$("cameraBtn").onclick=initCamera;
-$("startRound").onclick=teacherStart;
-$("nextQuestion").onclick=()=>{questionIndex++;setTeacherQuestion()};
-$("teacherHome").onclick=()=>location.reload();
-$("cameraHome").onclick=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());location.reload()};
+
+$("startButton").addEventListener("click",startGame);
+setQuestion();
 </script>
 </body>
 </html>
