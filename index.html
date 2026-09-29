@@ -18,9 +18,14 @@ h1{margin:0 0 8px;font-size:40px;color:#4b3fbf}
 .square{width:170px;height:170px;background:#7bd389}
 .rectangle{width:240px;height:150px;background:#ff8fab;border-radius:8px}
 .word-title{font-size:19px;color:#666}
-.letters{min-height:68px;margin:12px auto;display:flex;justify-content:center;gap:7px;flex-wrap:wrap}
-.letter{width:45px;height:55px;border:3px solid #4b3fbf;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;background:#f4f1ff}
+.letters{min-height:68px;margin:12px auto;display:flex;justify-content:center;align-items:center;gap:7px;flex-wrap:wrap}
+.letter{
+  width:45px;height:55px;border:3px solid #4b3fbf;border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;
+  background:#f4f1ff
+}
 .letter.empty{color:#bbb;background:#fafafa}
+.word-gap{width:22px;height:55px;flex:0 0 22px}
 .mic-button{margin-top:10px;width:88px;height:88px;border-radius:50%;border:none;background:#4b3fbf;color:#fff;font-size:38px;cursor:pointer;box-shadow:0 8px 18px rgba(75,63,191,.35)}
 .mic-button:disabled{opacity:.5;cursor:not-allowed}
 .mic-button.listening{background:#e63946;animation:pulse 1s infinite}
@@ -33,6 +38,12 @@ h1{margin:0 0 8px;font-size:40px;color:#4b3fbf}
 .next{background:#4b3fbf;color:#fff;display:none}
 .stars{font-size:25px;min-height:34px;margin-top:5px}
 .debug{margin-top:8px;font-size:13px;color:#aaa;min-height:18px}
+@media(max-width:600px){
+  h1{font-size:30px}
+  .instruction{font-size:19px}
+  .letter{width:40px;height:50px;font-size:25px}
+  .word-gap{width:16px;flex-basis:16px}
+}
 </style>
 </head>
 <body>
@@ -61,10 +72,10 @@ h1{margin:0 0 8px;font-size:40px;color:#4b3fbf}
 
 <script>
 const SHAPES=[
-{name:"SEGI TIGA",answer:"SEGITIGA",css:"triangle"},
-{name:"BULATAN",answer:"BULATAN",css:"circle"},
-{name:"SEGI EMPAT SAMA",answer:"SEGIEMPATSAMA",css:"square"},
-{name:"SEGI EMPAT TEPAT",answer:"SEGIEMPATTEPAT",css:"rectangle"}
+{name:"SEGI TIGA",answer:"SEGITIGA",css:"triangle",words:["SEGI","TIGA"]},
+{name:"BULATAN",answer:"BULATAN",css:"circle",words:["BULATAN"]},
+{name:"SEGI EMPAT SAMA",answer:"SEGIEMPATSAMA",css:"square",words:["SEGI","EMPAT","SAMA"]},
+{name:"SEGI EMPAT TEPAT",answer:"SEGIEMPATTEPAT",css:"rectangle",words:["SEGI","EMPAT","TEPAT"]}
 ];
 
 let currentShape=0,currentIndex=0,stars=0,recognition=null;
@@ -88,19 +99,35 @@ function createShape(){
   shapeArea.appendChild(d);
 }
 
+/* Paparkan kotak huruf dengan ruang yang jelas antara perkataan.
+   Contoh: SEGI   TIGA
+   Tetapi sistem tetap menyimpan jawapan sebagai SEGITIGA. */
 function createLetters(){
   lettersContainer.innerHTML="";
-  for(let i=0;i<current().answer.length;i++){
-    const b=document.createElement("div");
-    b.className="letter empty";
-    b.id="letter-"+i;
-    b.textContent="_";
-    lettersContainer.appendChild(b);
-  }
+  let position=0;
+
+  current().words.forEach((word,wordIndex)=>{
+    for(let i=0;i<word.length;i++){
+      const b=document.createElement("div");
+      b.className="letter empty";
+      b.id="letter-"+position;
+      b.textContent="_";
+      lettersContainer.appendChild(b);
+      position++;
+    }
+
+    if(wordIndex<current().words.length-1){
+      const gap=document.createElement("div");
+      gap.className="word-gap";
+      lettersContainer.appendChild(gap);
+    }
+  });
 }
 
 function updateRound(){
-  roundEl.textContent="Bentuk "+(currentShape+1)+" daripada "+SHAPES.length+" • "+current().name;
+  /* Nama bentuk tidak lagi dipaparkan di bahagian atas.
+     Murid hanya nampak nombor bentuk. */
+  roundEl.textContent="Bentuk "+(currentShape+1)+" daripada "+SHAPES.length;
   starsEl.textContent="⭐ "+stars;
 }
 
@@ -123,22 +150,12 @@ function loadShape(){
 const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 
 function normalize(t){
-  return t.toUpperCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/[.,!?]/g,"")
-    .trim();
+  return t.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[.,!?]/g,"").trim();
 }
 
-/*
-  Pengecaman suara dibuat berdasarkan HURUF YANG SEDANG DIKEHENDAKI.
-  Ini penting kerana Chrome kadang-kadang mentranskripsi nama huruf
-  Melayu secara pelik, contohnya T -> "air".
-*/
 function letterFromTranscript(text,expected){
   const t=normalize(text);
 
-  // Kes khas untuk huruf yang sering tersalah transkripsi.
   const contextAliases={
     "A":["A","EI","AY","E"],
     "B":["B","BI","BEE"],
@@ -168,7 +185,6 @@ function letterFromTranscript(text,expected){
     "Z":["Z","ZED"]
   };
 
-  // Buat perbandingan lebih longgar untuk "air"/"aire".
   const compact=t.replace(/\s+/g," ");
 
   if(contextAliases[expected]){
@@ -177,41 +193,29 @@ function letterFromTranscript(text,expected){
     }
   }
 
-  // Jika transkrip mengandungi frasa seperti "huruf T".
   const oneLetter=compact.match(/(?:HURUF\s*)?([A-Z])(?:\s*HURUF)?$/);
   if(oneLetter){
     const spoken=oneLetter[1];
     if(spoken===expected) return expected;
   }
 
-  // Padanan umum.
   const general={
     "A":"A","EI":"A","AY":"A",
     "B":"B","BI":"B","BEE":"B",
     "C":"C","SI":"C","SEE":"C",
     "D":"D","DI":"D","DEE":"D",
-    "E":"E",
-    "EF":"F","F":"F",
+    "E":"E","EF":"F","F":"F",
     "G":"G","JI":"G","JEE":"G",
     "H":"H","EICH":"H",
     "I":"I","AI":"I",
-    "J":"J","JE":"J",
-    "K":"K","KE":"K",
-    "L":"L","EL":"L",
-    "M":"M","EM":"M",
-    "N":"N","EN":"N",
-    "O":"O",
-    "P":"P","PI":"P",
-    "Q":"Q","KYU":"Q",
-    "R":"R","AR":"R",
-    "S":"S","ES":"S",
-    "T":"T","TI":"T",
-    "U":"U","YU":"U",
-    "V":"V","VI":"V",
-    "W":"W","DOUBLE U":"W",
-    "X":"X","EKS":"X",
-    "Y":"Y","WAI":"Y",
-    "Z":"Z","ZED":"Z"
+    "J":"J","JE":"J","K":"K","KE":"K",
+    "L":"L","EL":"L","M":"M","EM":"M",
+    "N":"N","EN":"N","O":"O","P":"P","PI":"P",
+    "Q":"Q","KYU":"Q","R":"R","AR":"R",
+    "S":"S","ES":"S","T":"T","TI":"T",
+    "U":"U","YU":"U","V":"V","VI":"V",
+    "W":"W","DOUBLE U":"W","X":"X","EKS":"X",
+    "Y":"Y","WAI":"Y","Z":"Z","ZED":"Z"
   };
 
   return general[compact] || "";
@@ -236,22 +240,19 @@ function setupRecognition(){
     debugEl.textContent="";
   };
 
-  recognition.onend=()=>{
-    micButton.classList.remove("listening");
-  };
+  recognition.onend=()=>micButton.classList.remove("listening");
 
-  recognition.onerror=(e)=>{
+  recognition.onerror=e=>{
     micButton.classList.remove("listening");
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+    if(e.error==="not-allowed"||e.error==="service-not-allowed")
       setStatus("⚠️ Akses mikrofon disekat. Benarkan mikrofon untuk laman ini.","error");
-    }else if(e.error==="no-speech"){
+    else if(e.error==="no-speech")
       setStatus("😅 Saya tak dengar. Cuba sebut huruf sekali lagi.");
-    }else{
+    else
       setStatus("😅 Pengecaman suara gagal. Cuba lagi.");
-    }
   };
 
-  recognition.onresult=(e)=>{
+  recognition.onresult=e=>{
     const alternatives=e.results[0];
     const raw=[];
     const expected=current().answer[currentIndex];
@@ -260,16 +261,12 @@ function setupRecognition(){
     for(let i=0;i<alternatives.length;i++){
       const transcript=alternatives[i].transcript;
       raw.push(transcript);
-
       const candidate=letterFromTranscript(transcript,expected);
 
-      // Jika mana-mana alternatif sepadan dengan huruf yang diperlukan,
-      // terus gunakan alternatif tersebut.
       if(candidate===expected){
         detected=expected;
         break;
       }
-
       if(!detected) detected=candidate;
     }
 
@@ -281,11 +278,7 @@ function setupRecognition(){
 function startListening(){
   if(!recognition)return;
   if(currentIndex>=current().answer.length)return;
-  try{
-    recognition.start();
-  }catch(e){
-    console.log(e);
-  }
+  try{recognition.start()}catch(e){console.log(e)}
 }
 
 function checkLetter(letter){
@@ -309,11 +302,10 @@ function checkLetter(letter){
       setStatus("🎉 BETUL! Awak berjaya mengeja "+current().name+"!","success");
       micButton.style.display="none";
 
-      if(currentShape<SHAPES.length-1){
+      if(currentShape<SHAPES.length-1)
         nextButton.style.display="inline-block";
-      }else{
+      else
         setStatus("🏆 TAHNIAH! Semua bentuk berjaya dieja! ⭐ "+stars,"success");
-      }
     }else{
       setStatus("✅ Betul! Sekarang sebut huruf seterusnya.","success");
     }
