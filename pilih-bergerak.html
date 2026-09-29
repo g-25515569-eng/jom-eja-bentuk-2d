@@ -191,24 +191,84 @@ async function loadAI(){
 
 async function startGame(){
   $("startPanel").classList.add("hidden");
-  $("status").textContent="📷 Membuka kamera...";
+  $("status").textContent="📷 Langkah 1/3: Membuka kamera...";
+
   try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      throw new Error("getUserMedia tidak disokong oleh pelayar ini.");
+    }
+
     stream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},
+      video:{
+        facingMode:{ideal:"environment"},
+        width:{ideal:1920},
+        height:{ideal:1080}
+      },
       audio:false
     });
+
     video.srcObject=stream;
     await video.play();
-    $("status").textContent="🤖 Memuatkan AI...";
-    await loadAI();
-    $("status").textContent="🟢 Kamera & AI siap!";
+
+    $("status").textContent="✅ Langkah 1/3: KAMERA BERJAYA dibuka!";
+
+    // Give Safari a moment to initialise the video frame.
+    await new Promise(r=>setTimeout(r,700));
+
+    $("status").textContent="🤖 Langkah 2/3: Memuatkan AI pengesan murid...";
+
+    try{
+      await loadAI();
+    }catch(aiError){
+      console.error("AI ERROR:",aiError);
+      $("status").innerHTML="⚠️ <b>KAMERA BERJAYA.</b> AI belum dapat dimuatkan.<br>Semak internet iPad dan cuba lagi.";
+      $("startPanel").classList.remove("hidden");
+      $("startButton").textContent="🔄 CUBA AI SEMULA";
+      return;
+    }
+
+    $("status").textContent="🟢 Langkah 3/3: KAMERA + AI SIAP!";
     setQuestion();
-    setTimeout(startRound,1200);
+
+    // Diagnostic mode: first test detection before starting the game.
+    showDiagnostic();
+
   }catch(e){
+    console.error("CAMERA ERROR:",e);
     $("startPanel").classList.remove("hidden");
-    $("status").textContent="⚠️ Kamera/AI gagal dimulakan. Benarkan kamera dan pastikan internet aktif.";
-    alert("Sila benarkan akses kamera. Jika Safari tidak membenarkan kamera, buka laman ini melalui HTTPS GitHub Pages.");
+    $("status").innerHTML="❌ <b>Kamera gagal dibuka.</b><br>"+(e.message||"Semak kebenaran kamera Safari.");
   }
+}
+
+function showDiagnostic(){
+  $("question").textContent="UJIAN KAMERA 🤖";
+  $("leftName").textContent="BERDIRI DI SINI";
+  $("rightName").textContent="BERDIRI DI SINI";
+  $("leftAnswer").classList.remove("correct","wrong");
+  $("rightAnswer").classList.remove("correct","wrong");
+  $("timer").textContent="—";
+  $("status").innerHTML="🧪 <b>UJIAN:</b> Berdiri di kawasan KIRI selama 2 saat, kemudian bergerak ke KANAN.";
+
+  const start=performance.now();
+  const test=setInterval(()=>{
+    const l=latestLeft,r=latestRight;
+    $("leftName").textContent=`KIRI: ${l}`;
+    $("rightName").textContent=`KANAN: ${r}`;
+    if(performance.now()-start>6000){
+      clearInterval(test);
+      if(latestLeft>0 || latestRight>0){
+        $("status").innerHTML=`🎉 <b>AI BERJAYA!</b> Saya dapat mengesan ${latestLeft} murid di KIRI dan ${latestRight} di KANAN.<br>Permainan akan bermula...`;
+        setTimeout(()=>{
+          setQuestion();
+          startRound();
+        },1800);
+      }else{
+        $("status").innerHTML="⚠️ <b>Kamera hidup tetapi AI belum mengesan murid.</b><br>Cuba berdiri lebih jauh dan pastikan seluruh badan kelihatan.";
+        $("startPanel").classList.remove("hidden");
+        $("startButton").textContent="🔄 UJI SEMULA";
+      }
+    }
+  },250);
 }
 
 $("startButton").addEventListener("click",startGame);
